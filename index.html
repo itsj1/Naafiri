@@ -367,7 +367,7 @@ async function search(){const q=Q;if(q.length<3){RES=null;RERR='';BUSY=false;ret
  BUSY=false;paintRes()}
 
 /* ============ Vues ============ */
-const tabbar=()=>`<nav class=tabs>${[['jour','book','Journal'],['prog','chart','Progrès'],['prof','user','Profil']].map(([k,i,l])=>`<button class="${TAB===k?'on':''}" data-a=tab data-t=${k}><span>${SI(i,24)}</span>${l}</button>`).join('')}</nav>`;
+const tabbar=()=>`<nav class=tabs>${[['prog','chart','Progrès'],['jour','book','Journal'],['prof','user','Profil']].map(([k,i,l])=>`<button class="${TAB===k?'on':''}" data-a=tab data-t=${k}><span>${SI(i,24)}</span>${l}</button>`).join('')}</nav>`;
 function dayTitle(k){const t=TODAY();if(k===t)return'Aujourd’hui';if(k===addD(t,-1))return'Hier';if(k===addD(t,1))return'Demain';
  const s=pd(k).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});return s[0].toUpperCase()+s.slice(1)}
 function ring(v,g,sz=150,w=12){const r=(sz-w)/2,c=2*Math.PI*r,p=g?Math.min(1,v/g):0,ov=v>g;

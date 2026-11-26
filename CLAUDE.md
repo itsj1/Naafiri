@@ -14,6 +14,7 @@ App personnelle (un seul utilisateur) pour **compter les calories**, inspirée d
 - `zxing.min.js` : `@zxing/library` 0.21.3 (UMD, licence Apache 2.0), chargé seulement au premier scan quand le navigateur n'a pas `BarcodeDetector` (iPhone). Ne pas le modifier.
 - **La page ne défile pas** : `main#app` est fixé plein écran et c'est lui qui défile (le rebond d'iOS ne bouge pas la barre d'onglets).
 - Rendu : `render()` reconstruit `#app` (vue) et `#dlg` (feuille ouverte) en `innerHTML` ; toutes les actions passent par `data-a=…` dans un seul écouteur de clic. Toujours échapper le texte avec `esc()`.
+- Onglets dans l’ordre **Progrès · Journal · Profil** (Journal au milieu, ouvert au démarrage).
 - État d'affichage : `TAB` (`jour` / `prog` / `prof`), `SUBV` (sous-page : `add`, `wth` historique des pesées, `my` mes aliments), `F` (feuille ou pop-up : `qty`, `qa`, `cf`, `prof`, `goal`, `wt`, `scan`, `cfg` réglages, `ask`), `CUR` (jour affiché `AAAA-MM-JJ`), `ADDM` (repas en cours d'ajout).
 - Les champs des feuilles écrivent dans `F.d` via `data-fd=…` (sans re-rendu) ; les bulles de choix passent par `data-a=fset data-f=… data-v=…`.
 - Sous-pages : `openSub()` + `history.pushState`, retour par `popstate` ; transitions `slide()` (View Transitions API, repli en animation de `#app`).
@@ -32,7 +33,7 @@ App personnelle (un seul utilisateur) pour **compter les calories**, inspirée d
 
 ## Sources
 
-- **Open Food Facts** (sans clé) : recherche `cgi/search.pl` filtrée sur la France (limitée à ~10 requêtes/min : recherche après 700 ms de pause, résultats gardés dans `SC`), et code-barres `api/v2/product/<code>.json`. Mention ODbL obligatoire, présente en bas du Profil.
+- **Open Food Facts** (sans clé) : recherche `cgi/search.pl` filtrée sur la France (limitée à ~10 requêtes/min : recherche après 700 ms de pause, résultats gardés dans `SC`), et code-barres `api/v2/product/<code>.json`. Mention ODbL obligatoire, présente dans la feuille Réglages.
 - Scan : `BarcodeDetector` natif si disponible (Android), sinon `zxing.min.js` ; saisie manuelle du code en secours.
 
 ## Synchro entre appareils
