@@ -325,7 +325,7 @@ html[data-vt=back]::view-transition-new(root){animation:vtInL .32s cubic-bezier(
 /* ============ Naafiri — compteur de calories (inspiré de Yazio) ============
    Données : localStorage + synchro optionnelle dans un dépôt GitHub privé (comme Muscu et MangaTime).
    Aliments : Open Food Facts (recherche + code-barres, sans clé) et une petite table d'aliments de base intégrée. */
-const APPV=24;                            // même numéro que CACHE dans sw.js (naafiri-vN)
+const APPV=25;                            // même numéro que CACHE dans sw.js (naafiri-vN)
 const K='naafiri-v1',DAY=864e5;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -474,7 +474,7 @@ let CALM=TODAY().slice(0,7),CQX=12,NUTM='all',TAB='jour',SUBV=null,F=null,FP=nul
 const RF={},SST=[];                       // RF : aliments vus dans les résultats Open Food Facts ; SST : pile des sous-pages ouvertes
 let UI={o:{}};try{UI=Object.assign(UI,JSON.parse(localStorage.getItem('naafiri-ui')||'{}'))}catch{}   // repas dépliés (propre à cet appareil)
 const saveUI=()=>{try{localStorage.setItem('naafiri-ui',JSON.stringify(UI))}catch{}};
-const food=id=>id&&id.startsWith('tp:')?tpFood(S.tp[id.slice(3)]):S.foods[id]||RF[id]||GENM[id]||CQM[id]||CLM[id];
+const food=id=>id&&id.startsWith('tp:')?tpFood(S.tp[id.slice(3)]):id&&CLM[id]?Object.assign({},CLM[id],S.foods[id]?{fav:S.foods[id].fav,lq:S.foods[id].lq,last:S.foods[id].last}:{}):S.foods[id]||RF[id]||GENM[id]||CQM[id]||CLM[id];
 
 /* ============ CIQUAL (Anses) : ~3 300 aliments génériques, chargés à la première recherche depuis ciqual.json ============ */
 let CQL=null,CQP=null,CQE='';const CQM={};
@@ -526,6 +526,14 @@ const CLS=[
 ['Féculents','frites-four','Frites au four',4030,'',[['1 portion',150]]],
 ['Féculents','patdouce','Patate douce cuite',4102,'',[['1 portion',200]]],
 ['Féculents','gnocchi','Gnocchis cuits',25510,'',[['1 assiette',200]]],
+['Féculents','pates-sec','Pâtes crues (poids sec)',9810,'seches spaghetti coquillettes',[['1 portion',80],['1 grosse portion',100],['1 paquet',500]]],
+['Féculents','riz-sec','Riz blanc cru (poids sec)',9100,'',[['1 portion',60],['1 grosse portion',80]]],
+['Féculents','riz-bas-sec','Riz thaï / basmati cru (poids sec)',9119,'',[['1 portion',60],['1 grosse portion',80]]],
+['Féculents','riz-cpl-sec','Riz complet cru (poids sec)',9102,'',[['1 portion',60]]],
+['Féculents','semoule-sec','Semoule crue (poids sec)',9610,'couscous',[['1 portion',60]]],
+['Féculents','quinoa-sec','Quinoa cru (poids sec)',9340,'',[['1 portion',60]]],
+['Féculents','boulgour-sec','Boulgour cru (poids sec)',9690,'',[['1 portion',60]]],
+['Féculents','lentilles-sec','Lentilles sèches',20586,'',[['1 portion',60]]],
 ['Viandes','steak5','Steak haché 5 % cuit',6251,'viande hachee boeuf',[['1 steak',100],['1 gros steak',125]]],
 ['Viandes','steak10','Steak haché 10 % cuit',6253,'viande hachee boeuf',[['1 steak',100],['1 gros steak',125]]],
 ['Viandes','steak15','Steak haché 15 % cuit',6255,'viande hachee boeuf',[['1 steak',100],['1 gros steak',125]]],
@@ -642,9 +650,15 @@ const CLS=[
 ['Snacks et sucré','compote','Compote de pomme',13038,'',[['1 pot',100]]],
 ['Snacks et sucré','biscuit','Biscuits sablés',24049,'gateau',[['1 biscuit',10]]],
 ['Snacks et sucré','glace','Glace',39527,'creme glacee',[['1 boule',50]]]];
+/* Féculents cuits : valeurs officielles CIQUAL 2020 (Anses) au lieu de 2025. Leur valeur dépend de l'eau absorbée à la cuisson
+   (pâtes cuites : 126 kcal en 2020, 158 à l'USDA, 167 en 2025) ; l'utilisateur trouve 2020 plus proche de la réalité.
+   Les autres nutriments (vitamines, minéraux…) sont ajustés au même taux d'eau (proportionnels aux calories). */
+const CLO={9811:{"k":126.0,"p":4.38,"c":25.0,"f":0.55,"fiber":1.9,"sugars":0.6,"water":68.3},9871:{"k":128.0,"p":4.88,"c":23.4,"f":0.9,"fiber":3.3,"sugars":0.6,"water":67.5},9104:{"k":145.0,"p":3.06,"c":31.8,"f":0.41,"fiber":0.8,"sugars":0,"water":63.9},9125:{"k":117.0,"p":2.88,"c":24.4,"f":0.6,"fiber":1.0,"sugars":0,"water":71.1},9103:{"k":158.0,"p":3.38,"c":32.6,"f":1.0,"fiber":2.3,"sugars":0,"water":60.4},9683:{"k":157.0,"p":5.0,"c":31.0,"f":1.0,"fiber":2.3,"sugars":1.6,"water":60.6},9691:{"k":111.0,"p":4.0,"c":21.7,"f":0.5,"fiber":2.2,"sugars":0,"water":71.5},4102:{"k":62.8,"p":1.69,"c":12.2,"f":0.15,"fiber":2.9,"sugars":6.11,"water":78.0}};
 let CLL=null;const CLM={};
 /* Construit les classiques à partir des aliments CIQUAL chargés (même valeurs, nom court, portions adaptées) */
-function buildCL(){CLL=CLS.map(([cat,k,n,code,kw,ps])=>{const b=CQM['cq:'+code];if(!b)return null;const o=Object.assign({},b,{id:'cl:'+k,n,cat,cl:1,cqn:b.n,ps,s:nrm(n+' '+kw)});delete o.t;CLM[o.id]=o;return o}).filter(Boolean)}
+function buildCL(){CLL=CLS.map(([cat,k,n,code,kw,ps])=>{const b=CQM['cq:'+code];if(!b)return null;const o=Object.assign({},b,{id:'cl:'+k,n,b:'CIQUAL 2025',cat,cl:1,cqn:b.n,ps,s:nrm(n+' '+kw)});delete o.t;delete o.tk;
+  const v=CLO[code];if(v){const r=v.k/(b.k||v.k),nu={};for(const x in b.nu)nu[x]=b.nu[x]*r;for(const x of['fiber','sugars','water'])if(v[x]!=null)nu[x]=v[x];Object.assign(o,{k:v.k,p:v.p,c:v.c,f:v.f,nu,b:'CIQUAL 2020'})}
+  CLM[o.id]=o;return o}).filter(Boolean)}
 function clMatch(q){if(!CLL)return[];const w=nrm(q).split(/[^a-z0-9]+/).filter(Boolean).map(sg);if(!w.length)return[];
  return CLL.filter(o=>{const T=o.tk||(o.tk=toks(o.s));return w.every(x=>T.some(t=>t.startsWith(x)))}).map((o,i)=>{const n=nrm(o.n);return[(toks(n).join(' ')===w.join(' ')?-1:0)+(n.startsWith(w[0])?0:1)+(w.every(x=>n.includes(x))?0:.5)+i/1000,o]}).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
 /* Versions « de tous les jours » mises en tête des résultats CIQUAL */
@@ -752,9 +766,9 @@ const badge=()=>{const n=mealE().length;return`<button class="cnt${n?'':' z'}" i
 function updBadge(){const b=$('#cnt');if(!b)return;b.outerHTML=badge();const c=$('#cnt');void c.offsetWidth;c.classList.add('pop')}
 const flist=L=>L.length?`<div class=fl>${L.map(frow).join('')}</div>`:'';
 function localMatch(q){const w=nrm(q).split(/\s+/).filter(Boolean),ok=o=>{const s=nrm(o.n+' '+(o.b||''));return w.every(x=>s.includes(x))};
- const mine=Object.values(S.foods).filter(o=>!o.gen&&ok(o)).sort((a,b)=>(b.last||0)-(a.last||0)),gen=Object.values(GENM).filter(ok);
+ const mine=Object.values(S.foods).filter(o=>!o.gen&&!o.cl&&ok(o)).sort((a,b)=>(b.last||0)-(a.last||0)),gen=Object.values(GENM).filter(ok);
  return{mine:mine.slice(0,10),gen:gen.slice(0,10)}}
-function resHtml(){if(!Q){const all=Object.values(S.foods);
+function resHtml(){if(!Q){const all=Object.values(S.foods).map(o=>o.cl&&CLM[o.id]?food(o.id):o);
   if(ADT==='cls')return chipsAdt()+`<button class=lnk data-a=adt data-t=rec style="padding:6px 0 0">${SI('l',16)} Retour</button>`+(CLL?[...new Set(CLS.map(x=>x[0]))].map(c=>`<p class=lbl>${c}</p>${flist(CLL.filter(o=>o.cat===c))}`).join(''):`<div class=spin></div>`);
   if(ADT==='tpl')return chipsAdt()+tplList()+`<button class=big data-a=tpnew>${SI('plus',18)}Créer un repas</button>`;
   const L=ADT==='fav'?all.filter(o=>o.fav).sort((a,b)=>a.n.localeCompare(b.n)):ADT==='my'?all.filter(o=>o.my).sort((a,b)=>a.n.localeCompare(b.n)):all.filter(o=>o.last).sort((a,b)=>b.last-a.last).slice(0,40);
