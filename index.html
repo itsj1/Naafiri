@@ -155,6 +155,20 @@ input:focus{border-color:var(--acc)}
 .st3>div{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;text-align:center}
 .st3 b{display:block;font-size:22px}
 .st3 small{color:var(--mut);font-size:12px}
+/* Calendrier du mois (Progrès) : vert = objectif atteint, rouge = hors objectif */
+.calh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.calh b{font-size:17px;text-transform:capitalize;flex:1;text-align:center}
+.calh .ib{width:34px;height:34px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px 4px;text-align:center}
+.cal span{font-size:11px;color:var(--mut);font-weight:600;padding-bottom:2px}
+.cal button{aspect-ratio:1;max-width:42px;width:100%;margin:0 auto;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.cal button.ok{background:var(--ok);color:#fff}
+.cal button.ko{background:var(--red);color:#fff}
+.cal button.td{box-shadow:0 0 0 2px var(--acc)}
+.cal button.fu{opacity:.35}
+.cal button:disabled{visibility:hidden}
+.calg{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:12.5px;color:var(--mut)}
+.calg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .chart{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
 .chart text{font-size:10px;fill:var(--mut);font-family:inherit}
 .hl{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--line)}
@@ -434,7 +448,7 @@ const gear=()=>`<button class=ib data-a=cfg aria-label="Réglages">${SI('gear',2
 const SI=(n,z=22,w=2)=>`<svg width=${z} height=${z} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 
 /* ============ État d'affichage ============ */
-let CQX=12,NUTM='all',TAB='jour',SUBV=null,F=null,FP=null,CUR=TODAY(),ADDM='b',ADT='rec',Q='',RES=null,RERR='',BUSY=false,MSG='',ST=0,VK='';
+let CALM=TODAY().slice(0,7),CQX=12,NUTM='all',TAB='jour',SUBV=null,F=null,FP=null,CUR=TODAY(),ADDM='b',ADT='rec',Q='',RES=null,RERR='',BUSY=false,MSG='',ST=0,VK='';
 const RF={},SST=[];                       // RF : aliments vus dans les résultats Open Food Facts ; SST : pile des sous-pages ouvertes
 let UI={o:{}};try{UI=Object.assign(UI,JSON.parse(localStorage.getItem('naafiri-ui')||'{}'))}catch{}   // repas dépliés (propre à cet appareil)
 const saveUI=()=>{try{localStorage.setItem('naafiri-ui',JSON.stringify(UI))}catch{}};
@@ -582,10 +596,22 @@ function weekChart(G){const W=320,H=130,t=TODAY(),D=[];for(let i=6;i>=0;i--){con
  const mx=Math.max(G.k*1.25,...D.map(d=>d[1])),y=v=>10+(1-v/mx)*(H-30),bw=28,gap=(W-16-7*bw)/6;
  return`<svg class=chart viewBox="0 0 ${W} ${H}">${D.map(([k,v],i)=>{const x=8+i*(bw+gap);return`<rect x=${x} y=${y(v)} width=${bw} height=${Math.max(0,H-20-y(v))} rx=7 fill="var(${v>G.k*1.05?'--red':'--acc'})" opacity="${k===t?1:.75}"/><text x=${x+bw/2} y=${H-4} text-anchor=middle>${'DLMMJVS'[pd(k).getDay()]}</text>`}).join('')}
   <line x1=4 x2=${W-4} y1=${y(G.k)} y2=${y(G.k)} stroke="var(--mut)" stroke-dasharray="4 4"/><text x=${W-4} y=${y(G.k)-4} text-anchor=end>${fmt(G.k)}</text></svg>`}
+/* Un jour noté est « atteint » s'il est entre 90 % et 110 % de l'objectif du jour */
+const CALLO=.9,CALHI=1.1;
+function calHtml(G){const[y,m]=CALM.split('-').map(Number),d0=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(d0.getDay()+6)%7,t=TODAY();let h='',ok=0,ko=0;
+ for(let i=0;i<off;i++)h+='<button disabled></button>';
+ for(let d=1;d<=n;d++){const k=CALM+'-'+String(d).padStart(2,'0'),D=dayR(k),kc=D.e.length?sum(D.e).k:0,c=kc?(kc>=G.k*CALLO&&kc<=G.k*CALHI?'ok':'ko'):'';if(c==='ok')ok++;else if(c)ko++;
+  h+=`<button class="${c}${k===t?' td':''}${k>t?' fu':''}" data-a=cday data-d=${k} aria-label="${d}${kc?' : '+fmt(kc)+' kcal':''}">${d}</button>`}
+ const lab=d0.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+ return`<div class=card><div class=calh><button class=ib data-a=calm data-n=-1 aria-label="Mois précédent">${SI('l',18)}</button><b>${lab}</b><button class=ib data-a=calm data-n=1 aria-label="Mois suivant">${SI('r',18)}</button></div>
+ <div class=cal>${'LMMJVSD'.split('').map(x=>`<span>${x}</span>`).join('')}${h}</div>
+ <div class=calg><span><i style="background:var(--ok)"></i>Objectif atteint : ${ok}</span><span><i style="background:var(--red)"></i>Hors objectif : ${ko}</span></div>
+ <p class=mut style="text-align:center;margin:6px 0 0;font-size:12px">Vert : entre ${fmt(G.k*CALLO)} et ${fmt(G.k*CALHI)} kcal. Touche un jour pour l’ouvrir.</p></div>`}
 function vProg(){const G=goals(),ks=wkeys(),P=ks.slice(-120).map(k=>[k,S.wt[k].kg]),cur=curKg(),st=ks.length?S.wt[ks[0]].kg:0,gw=S.prof.gw;
  const D7=[];for(let i=0;i<7;i++){const d=dayR(addD(TODAY(),-i));if(d.e.length)D7.push(sum(d.e))}
  const av=x=>D7.length?D7.reduce((a,v)=>a+v[x],0)/D7.length:0,sk=streak();
  let h=`<div class=dh><h1 class=fc>Progrès</h1>${gear()}</div><div class=st3><div><b class=fc>${cur?f1(cur):'–'}</b><small>kg actuels</small></div><div><b class=fc>${st&&cur?(cur-st>0?'+':'')+f1(cur-st):'–'}</b><small>kg depuis le début</small></div><div><b class=fc>${sk}</b><small>jour${sk>1?'s':''} de suite</small></div></div>
+ ${calHtml(G)}
  <div class=card><div class=rowh><div><b>Poids</b><br><small>${gw?`Objectif ${f1(gw)} kg${cur?` · encore ${f1(Math.abs(cur-gw))} kg`:''}`:'Fixe un poids cible dans ton profil'}</small></div><button class="ib ac" data-a=fwt>${SI('plus',18)}</button></div>${lineChart(P,gw)}
  ${ks.length?`<button class=lnk data-a=sub data-s=wth style="padding:10px 0 0">Historique des pesées (${ks.length})</button>`:''}</div>
  <div class=card><div class=rowh><div><b>Calories · 7 derniers jours</b><br><small>${D7.length?`Moyenne ${fmt(av('k'))} kcal par jour noté`:'Aucun repas noté cette semaine'}</small></div></div>${weekChart(G)}</div>
@@ -791,6 +817,8 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='fd'){const o=food(d.id);if(o)openQty(o,ADDM);return}
  if(a==='qadd'){const o=food(d.id);if(!o)return;const dq=defQ(o);addEntry(o,ADDM,dq.un,dq.nb);paintRes();return updBadge()}
  if(a==='ent'){const x=dayR(CUR).e.find(y=>y.id===d.id);if(!x)return;if(x.qa){F={k:'qa',eid:x.id,d:{m:x.m,n:x.n==='Ajout rapide'?'':x.n,k:String(x.k).replace('.',','),c:x.c||'',p:x.p||'',f:x.f||''}};return render()}return openQty(entryFood(x),x.m,x)}
+ if(a==='calm'){const[y,m]=CALM.split('-').map(Number),x=new Date(y,m-1+(+d.n),1);CALM=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');return render()}
+ if(a==='cday'){CUR=d.d;TAB='jour';return render()}
  if(a==='cqmore'){CQX+=30;return paintRes()}
  if(a==='nut'){NUTM=d.m;return openSub('nut')}
  if(a==='qfull'){F.full=!F.full;return render()}
