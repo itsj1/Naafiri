@@ -15,10 +15,12 @@ App personnelle (un seul utilisateur) pour **compter les calories**, inspirée d
 - **La page ne défile pas** : `main#app` est fixé plein écran et c'est lui qui défile (le rebond d'iOS ne bouge pas la barre d'onglets).
 - Rendu : `render()` reconstruit `#app` (vue) et `#dlg` (feuille ouverte) en `innerHTML` ; toutes les actions passent par `data-a=…` dans un seul écouteur de clic. Toujours échapper le texte avec `esc()`.
 - Onglets dans l’ordre **Progrès · Journal · Profil** (Journal au milieu, ouvert au démarrage).
-- État d'affichage : `TAB` (`jour` / `prog` / `prof`), `SUBV` (sous-page : `add`, `wth` historique des pesées, `my` mes aliments), `F` (feuille ou pop-up : `qty`, `qa`, `cf`, `prof`, `goal`, `wt`, `scan`, `cfg` réglages, `ask`), `CUR` (jour affiché `AAAA-MM-JJ`), `ADDM` (repas en cours d'ajout).
+- État d'affichage : `TAB` (`jour` / `prog` / `prof`), `SUBV` (sous-page : `add`, `meal` aliments du repas `ADDM`, `wth` historique des pesées, `my` mes aliments ; pile `SST` pour revenir à la sous-page précédente), `F` (feuille ou pop-up : `qty`, `qa`, `cf`, `prof`, `goal`, `wt`, `scan`, `cfg` réglages, `ask`), `CUR` (jour affiché `AAAA-MM-JJ`), `ADDM` (repas en cours d'ajout).
 - Les champs des feuilles écrivent dans `F.d` via `data-fd=…` (sans re-rendu) ; les bulles de choix passent par `data-a=fset data-f=… data-v=…`.
 - Sous-pages : `openSub()` + `history.pushState`, retour par `popstate` ; transitions `slide()` (View Transitions API, repli en animation de `#app`).
 - Bandeaux « Annuler » : `toast(msg, undo)` dans `#toasts`, 4 s, 3 max.
+- Gestes horizontaux (`HZ`) : ligne d’aliment `.sw` glissée vers la gauche → poubelle (`edel`, `delEntry()`) ; bulle du jour `#sumc` glissée → jour précédent / suivant. Le clic qui suit un glissé est ignoré (`NOCL`).
+- `localStorage['naafiri-ui']` (`UI`, propre à l’appareil, non synchronisé) : repas dépliés dans le Journal (`UI.o[m]`).
 
 ## Données
 
@@ -42,8 +44,8 @@ Fichier `naafiri-data.json` dans un **dépôt GitHub privé** via l'API Contents
 
 ## Écrans
 
-- **Journal** : flèches + bandeau de la semaine (point violet = jour noté, rouge = objectif dépassé), anneau des calories restantes, barres glucides / protéines / lipides, quatre repas avec bouton +. Pas de suivi de l’eau (retiré à la demande de l’utilisateur).
-- **Ajouter** : choix du repas, recherche (mes aliments → aliments de base → Open Food Facts), bouton scan, onglets Récents / Favoris / Mes aliments, « + » pour ajouter directement une portion, Ajout rapide, Créer un aliment.
+- **Journal** : flèches + bandeau de la semaine (point violet = jour noté, rouge = objectif dépassé), bulle avec anneau des calories restantes et barres glucides / protéines / lipides (glisser à gauche / droite = jour suivant / précédent), quatre repas avec bouton + et flèche pour déplier / replier leurs aliments (repliés par défaut). Pas de suivi de l’eau (retiré à la demande de l’utilisateur).
+- **Ajouter** : choix du repas, rond en haut à droite avec le nombre d’aliments de ce repas (ouvre la page `meal` : liste, glisser pour supprimer), recherche (mes aliments → aliments de base → Open Food Facts), bouton scan, bulles Récents / Favoris / Mes aliments de même largeur, « + » pour ajouter directement une portion (coche violette si l’aliment est déjà dans le repas choisi), Ajout rapide, Créer un aliment.
 - **Feuille quantité** : kcal et macros en direct, portion ou grammes, repas, favori (étoile), détail nutritionnel, Supprimer en modification.
 - **Progrès** : poids actuel, évolution, série de jours ; courbe du poids avec objectif ; calories des 7 derniers jours ; macros moyennes.
 - **Roue dentée en haut à droite** (Journal, Progrès, Profil, `gear()`) : feuille Réglages avec synchro GitHub, export / import JSON et crédits.
@@ -51,7 +53,7 @@ Fichier `naafiri-data.json` dans un **dépôt GitHub privé** via l'API Contents
 
 ## Design
 
-- Thème sombre ou clair automatique, accent **violet Naafiri** `#a43cf0` (`#b65cff` en sombre). Glucides ambre, protéines rose, lipides bleu.
+- Thème sombre ou clair automatique, accent **violet Naafiri** `#a43cf0` (`#b65cff` en sombre). Le thème sombre est volontairement assez clair (fond `#241e2b`, cartes `#302839`) : l’utilisateur trouvait l’ancien trop sombre. Glucides ambre, protéines rose, lipides bleu.
 - Toujours passer par les variables CSS de `:root` pour les couleurs.
 - Mêmes composants que les autres projets : barre d'onglets en pilule flottante, cartes arrondies, feuilles par le bas (glisser pour fermer), réglages en cartes groupées, icônes SVG maison dans `IC` (en ajouter là plutôt qu'importer une librairie).
 - Champs en 16 px (pas de zoom iOS), `inputmode=decimal` pour les chiffres, virgule acceptée.
