@@ -161,7 +161,8 @@ input:focus{border-color:var(--acc)}
 .calh .ib{width:34px;height:34px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px 4px;text-align:center}
 .cal span{font-size:11px;color:var(--mut);font-weight:600;padding-bottom:2px}
-.cal button{aspect-ratio:1;max-width:42px;width:100%;margin:0 auto;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.cal button{position:relative;width:100%;max-width:42px;aspect-ratio:1;margin:0 auto;padding:0;border-radius:50%;font-size:14px;font-weight:600;line-height:1;color:var(--ink);background:color-mix(in srgb,var(--ink) 5%,transparent);font-variant-numeric:tabular-nums}
+.cal button b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:inherit}
 .cal button.ok{background:var(--ok);color:#fff}
 .cal button.ko{background:var(--red);color:#fff}
 .cal button.td{box-shadow:0 0 0 2px var(--acc)}
@@ -601,21 +602,19 @@ const CALLO=.9,CALHI=1.1;
 function calHtml(G){const[y,m]=CALM.split('-').map(Number),d0=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),off=(d0.getDay()+6)%7,t=TODAY();let h='',ok=0,ko=0;
  for(let i=0;i<off;i++)h+='<button disabled></button>';
  for(let d=1;d<=n;d++){const k=CALM+'-'+String(d).padStart(2,'0'),D=dayR(k),kc=D.e.length?sum(D.e).k:0,c=kc?(kc>=G.k*CALLO&&kc<=G.k*CALHI?'ok':'ko'):'';if(c==='ok')ok++;else if(c)ko++;
-  h+=`<button class="${c}${k===t?' td':''}${k>t?' fu':''}" data-a=cday data-d=${k} aria-label="${d}${kc?' : '+fmt(kc)+' kcal':''}">${d}</button>`}
+  h+=`<button class="${c}${k===t?' td':''}${k>t?' fu':''}" data-a=cday data-d=${k} aria-label="${d}${kc?' : '+fmt(kc)+' kcal':''}"><b>${d}</b></button>`}
  const lab=d0.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
  return`<div class=card><div class=calh><button class=ib data-a=calm data-n=-1 aria-label="Mois précédent">${SI('l',18)}</button><b>${lab}</b><button class=ib data-a=calm data-n=1 aria-label="Mois suivant">${SI('r',18)}</button></div>
  <div class=cal>${'LMMJVSD'.split('').map(x=>`<span>${x}</span>`).join('')}${h}</div>
  <div class=calg><span><i style="background:var(--ok)"></i>Objectif atteint : ${ok}</span><span><i style="background:var(--red)"></i>Hors objectif : ${ko}</span></div>
  <p class=mut style="text-align:center;margin:6px 0 0;font-size:12px">Vert : entre ${fmt(G.k*CALLO)} et ${fmt(G.k*CALHI)} kcal. Touche un jour pour l’ouvrir.</p></div>`}
-function vProg(){const G=goals(),ks=wkeys(),P=ks.slice(-120).map(k=>[k,S.wt[k].kg]),cur=curKg(),st=ks.length?S.wt[ks[0]].kg:0,gw=S.prof.gw;
+function vProg(){const G=goals();
  const D7=[];for(let i=0;i<7;i++){const d=dayR(addD(TODAY(),-i));if(d.e.length)D7.push(sum(d.e))}
- const av=x=>D7.length?D7.reduce((a,v)=>a+v[x],0)/D7.length:0,sk=streak();
- let h=`<div class=dh><h1 class=fc>Progrès</h1>${gear()}</div><div class=st3><div><b class=fc>${cur?f1(cur):'–'}</b><small>kg actuels</small></div><div><b class=fc>${st&&cur?(cur-st>0?'+':'')+f1(cur-st):'–'}</b><small>kg depuis le début</small></div><div><b class=fc>${sk}</b><small>jour${sk>1?'s':''} de suite</small></div></div>
+ const av=x=>D7.length?D7.reduce((a,v)=>a+v[x],0)/D7.length:0;
+ let h=`<div class=dh><h1 class=fc>Progrès</h1>${gear()}</div>
+ <div class=card><b>Macros moyennes · 7 jours</b><div class=mac>${[['Glucides','c','--cb'],['Protéines','p','--pr'],['Lipides','f','--fa']].map(([l,x,c])=>`<div><small>${l}</small>${bar(av(x),G[x],c)}<b>${fmt(av(x))}</b><small style="display:inline"> / ${fmt(G[x])} g</small></div>`).join('')}</div></div>
  ${calHtml(G)}
- <div class=card><div class=rowh><div><b>Poids</b><br><small>${gw?`Objectif ${f1(gw)} kg${cur?` · encore ${f1(Math.abs(cur-gw))} kg`:''}`:'Fixe un poids cible dans ton profil'}</small></div><button class="ib ac" data-a=fwt>${SI('plus',18)}</button></div>${lineChart(P,gw)}
- ${ks.length?`<button class=lnk data-a=sub data-s=wth style="padding:10px 0 0">Historique des pesées (${ks.length})</button>`:''}</div>
- <div class=card><div class=rowh><div><b>Calories · 7 derniers jours</b><br><small>${D7.length?`Moyenne ${fmt(av('k'))} kcal par jour noté`:'Aucun repas noté cette semaine'}</small></div></div>${weekChart(G)}</div>
- <div class=card><b>Macros moyennes · 7 jours</b><div class=mac>${[['Glucides','c','--cb'],['Protéines','p','--pr'],['Lipides','f','--fa']].map(([l,x,c])=>`<div><small>${l}</small>${bar(av(x),G[x],c)}<b>${fmt(av(x))}</b><small style="display:inline"> / ${fmt(G[x])} g</small></div>`).join('')}</div></div>`;
+ <div class=card><div class=rowh><div><b>Calories · 7 derniers jours</b><br><small>${D7.length?`Moyenne ${fmt(av('k'))} kcal par jour noté`:'Aucun repas noté cette semaine'}</small></div></div>${weekChart(G)}</div>`;
  return h+tabbar()}
 function vWth(){const ks=wkeys().reverse();return`<header class=sh style="margin-top:12px"><button class=ib data-a=back>${SI('l',20)}</button><h1 class=fc>Pesées</h1><button class="ib ac" data-a=fwt>${SI('plus',18)}</button></header>
  <div class=ocard style="margin-top:14px">${ks.map((k,i)=>{const v=S.wt[k].kg,pv=ks[i+1]?S.wt[ks[i+1]].kg:0,df=pv?v-pv:0;
