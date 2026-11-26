@@ -169,10 +169,18 @@ input:focus{border-color:var(--acc)}
 .orow:first-child{border-top:0}
 .orow span{color:var(--mut);text-align:right}
 .orow.fld{flex-direction:column;align-items:stretch;gap:8px}
-.orow.fld b{font-size:15px;font-weight:600}
+.orow.fld b{font-size:17px;font-weight:600}
 .orow.hint{font-size:14px;color:var(--mut);display:block}
 .orow.go{color:var(--act);font-weight:700}
 .cred{font-size:12px;color:var(--mut);margin:20px 4px 0}
+.opl{font:12px ui-monospace,Menlo,monospace;letter-spacing:.14em;color:var(--mut);margin:22px 4px 8px}
+.soft{background:color-mix(in srgb,var(--ink) 4%,var(--card));border:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-weight:600}
+.mi{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:12px 16px;margin:10px 0}
+.mi i{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.mi b{display:block;font-size:18px;font-weight:600;line-height:1.25}
+.mi small{display:block;color:var(--mut);font-size:14px;margin-top:2px}
+.mi.gr i{background:var(--acc);color:var(--on)}
+.mi small:empty{display:none}
 .cred a{color:var(--act)}
 .inl{display:flex;gap:8px}
 .inl input{flex:1;min-width:0}
@@ -418,6 +426,7 @@ const IC={
  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
  apple:'<path d="M12 7c-2-1.5-7-1.5-7 4.5S8.5 21 10 21c1 0 1.2-.5 2-.5s1 .5 2 .5c1.5 0 5-3.5 5-9.5S14 5.5 12 7z"/><path d="M12 7c0-2 1-3.5 3-4"/>',
  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+ down:'<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>',upl:'<path d="M12 16V5"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/>',
  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
  target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5"/>',
  up:'<path d="M12 19V5M6 11l6-6 6 6"/>',dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'};
@@ -675,19 +684,14 @@ function formHtml(){const f=F,P=S.prof;
   <div class=cam><video id=cam playsinline muted></video><p id=cmsg>${esc(f.msg||'Place le code-barres dans le cadre')}</p></div>
   ${f.nf?`<p class=mut>Le produit ${esc(f.nf)} n’est pas dans Open Food Facts.</p><button class=big data-a=fcf data-code="${esc(f.nf)}">Le créer moi-même</button>`:''}
   <p class=lbl>${f.nf?'Corrige le code si besoin':'Ou tape le code'}</p><div class=inl><input id=code inputmode=numeric placeholder="3017620422003" value="${esc(f.nf||'')}" autocomplete=off><button class="ib ac" data-a=codeok style="width:48px;height:48px">${SI('search',20)}</button></div></div></div>`;
- if(f.k==='cfg')return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>Réglages</h2>
- <p class=lbl>Synchronisation GitHub</p><div class=ocard>
-  <div class="orow hint">Garde tes données dans un fichier d’un dépôt GitHub <b>privé</b> pour les retrouver sur tous tes appareils (jeton fine-grained « Contents : Read and write » sur ce dépôt).</div>
-  <label class="orow fld"><b>Dépôt</b><input data-cfg=repo placeholder="itsj1/mes-donnees" value="${esc(S.cfg.repo)}" autocapitalize=off autocorrect=off spellcheck=false></label>
-  <label class="orow fld"><b>Fichier</b><input data-cfg=path value="${esc(S.cfg.path)}" autocapitalize=off autocorrect=off spellcheck=false></label>
-  <label class="orow fld"><b>Jeton</b><input data-cfg=token type=password value="${esc(S.cfg.token)}" autocomplete=off></label>
-  <button class="orow go" data-a=sync>Synchroniser maintenant<span id=msg>${esc(MSG)}</span></button></div>
- <p class=lbl>Base USDA (facultatif)</p><div class=ocard>
-  <div class="orow hint">Ajoute les aliments de la base américaine USDA aux recherches (noms en anglais). Crée une clé gratuite sur <a href="https://fdc.nal.usda.gov/api-key-signup" target=_blank rel=noopener>fdc.nal.usda.gov</a> puis colle-la ici. Elle reste sur cet appareil.</div>
-  <label class="orow fld"><b>Clé API USDA</b><input data-cfg=usda type=password value="${esc(S.cfg.usda||'')}" autocomplete=off autocapitalize=off spellcheck=false placeholder="Laisse vide pour ne pas utiliser l’USDA"></label></div>
- <p class=lbl>Sauvegarde</p><div class=ocard><button class="orow go" data-a=exp>Exporter mes données (JSON)</button><button class="orow go" data-a=imp>Importer un fichier</button></div>
- <input type=file id=file accept="application/json,.json" hidden>
- <p class=cred>Aliments génériques : table <a href="https://ciqual.anses.fr" target=_blank rel=noopener>CIQUAL 2025 de l’Anses</a> (Licence Ouverte Etalab). Données produits : <a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a>, sous licence ODbL. Base facultative : <a href="https://fdc.nal.usda.gov" target=_blank rel=noopener>USDA FoodData Central</a> (domaine public). Calcul des besoins : formule de Mifflin-St Jeor.</p></div></div>`;
+ if(f.k==='cfg'){const c=S.cfg,fl=(k,l,ph,t)=>`<div class="orow fld"><b>${l}</b><input class=soft data-cfg=${k} placeholder="${esc(ph)}" value="${esc(c[k]||'')}" ${t||''} autocomplete=off autocapitalize=off autocorrect=off spellcheck=false></div>`,
+  MI=(a,i,t,sub,x)=>`<button class="mi${x?' gr':''}" data-a=${a}><i>${SI(i,24)}</i><span><b>${t}</b><small${a==='sync'?' id=msg':''}>${sub}</small></span></button>`;
+  return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>Réglages</h2>
+  <div class=opl>SYNCHRONISATION GITHUB</div><div class=ocard>${fl('repo','Dépôt privé','utilisateur/depot-prive')}${fl('path','Fichier','naafiri-data.json')}${fl('token','Jeton d’accès','','type=password')}</div>
+  ${MI('sync','sync','Synchroniser maintenant',esc(MSG)||'Envoie et récupère tes données.',1)}
+  <div class=opl>BASE USDA (FACULTATIF)</div><div class=ocard>${fl('usda','Clé API USDA','Laisse vide pour ne pas utiliser l’USDA','type=password')}</div>
+  <div class=opl>SAUVEGARDE</div>${MI('exp','down','Exporter mes données','Télécharge une copie de ton journal.')}${MI('imp','upl','Importer un fichier','Fusionne une sauvegarde avec tes données.')}<input id=file type=file accept="application/json,.json" hidden>
+  <p class=cred>Aliments génériques : table <a href="https://ciqual.anses.fr" target=_blank rel=noopener>CIQUAL 2025 de l’Anses</a> (Licence Ouverte Etalab). Données produits : <a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a>, sous licence ODbL. Base facultative : <a href="https://fdc.nal.usda.gov" target=_blank rel=noopener>USDA FoodData Central</a> (domaine public). Calcul des besoins : formule de Mifflin-St Jeor.</p></div></div>`}
  if(f.k==='ask')return`<div class="sov pop" data-a=fno><div class=dpop><h3>${esc(f.t)}</h3><p>${esc(f.m)}</p><button class="dbt red" data-a=askok>${esc(f.ok)}</button><button class="dbt tx" data-a=fno>Annuler</button></div></div>`;
  return''}
 const qm=v=>[['Glucides','c','--cb'],['Protéines','p','--pr'],['Lipides','f','--fa']].map(([l,x,c])=>`<div><i style="background:var(${c})"></i><b>${f1(v[x])} g</b><small>${l}</small></div>`).join('');
