@@ -200,10 +200,15 @@ input:focus{border-color:var(--acc)}
 .qm small{font-size:12px;color:var(--mut)}
 .qm i{display:block;width:22px;height:4px;border-radius:9px;margin:0 auto 6px}
 .qbox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:12px 0 4px}
-.qrow{display:flex;align-items:center;gap:10px;padding:0 12px}
-.qrow input{flex:1;min-width:0;text-align:center;font-size:24px;font-weight:800;padding:10px;border-radius:16px;background:var(--bg)}
-.stp{flex:none;width:48px;height:48px;border-radius:50%;background:var(--tint);color:var(--act);display:grid;place-items:center}
-.stp:active{transform:scale(.92)}
+/* Roulette (comme le sélecteur d'iOS) : liste à défilement aimanté, la valeur au centre est la valeur choisie */
+.whw{position:relative;height:200px;margin:0 12px}
+.whb{position:absolute;left:0;right:0;top:80px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.wh{position:relative;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+.wh::-webkit-scrollbar{display:none}
+.wh:before,.wh:after{content:"";display:block;height:80px}
+.wh button{display:block;width:100%;height:40px;scroll-snap-align:center;text-align:center;font-size:19px;font-weight:600;color:var(--mut);transition:color .15s,font-size .15s}
+.wh button.on{color:var(--ink);font-size:26px;font-weight:800}
+.whu{position:absolute;top:80px;left:calc(50% + 44px);line-height:40px;font-weight:700;color:var(--act);pointer-events:none;max-width:calc(50% - 50px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qg{text-align:center;color:var(--mut);font-size:13px;margin:6px 0 2px}
 .qbox .chips{margin:8px 0;padding:0 12px}
 .qbox .chips.qv .chip{min-width:52px;text-align:center}
@@ -526,7 +531,18 @@ const fld=(l,k,v,u,im='decimal',ph='')=>`<label class="orow fld"><b>${l}</b><div
 /* Unités : portions propres à l'aliment (p, p1, p2…, pk = paquet), puis g / kg / mL / L (1 mL compté comme 1 g) */
 const UB=[['g','g',1],['kg','kg',1000],['ml','mL',1],['l','L',1000]];
 const QV={p:[.5,1,2,3],g:[50,100,150,200,250],kg:[.25,.5,1],ml:[100,200,250,330,500],l:[.25,.5,1,1.5]};
-const STEP={p:1,g:10,kg:.1,ml:10,l:.1};
+const WH=40;let WV=[];                          // hauteur d'une ligne de la roulette, valeurs affichées
+function whVals(k,cur){const L=[],a=(f,t,st)=>{for(let x=f;x<=t+1e-9;x+=st)L.push(Math.round(x*100)/100)};
+ if(k==='p'){a(.25,3,.25);a(3.5,10,.5);a(11,30,1)}else if(k==='kg'||k==='l'){a(.05,3,.05);a(3.1,10,.1)}else{a(5,500,5);a(510,1000,10);a(1050,3000,50)}
+ cur=Math.round(num(cur)*100)/100;if(cur>0&&!L.includes(cur)){L.push(cur);L.sort((x,y)=>x-y)}return L}
+const wf=x=>String(Math.round(x*100)/100).replace('.',',');
+function whHtml(){const k=uk(F.un),n=Math.round(num(F.nb)*100)/100;WV=whVals(k,n);return WV.map((x,i)=>`<button class="${x===n?'on':''}" data-a=whv data-i=${i}>${wf(x)}</button>`).join('')}
+const whUnit=()=>{const u=units(F.fd).find(x=>x[0]===F.un)||UB[0];return u[0][0]==='p'?plab(u[1]):u[1]};
+function whInit(){const w=$('#wh');if(!w)return;const i=WV.indexOf(Math.round(num(F.nb)*100)/100);w.scrollTop=Math.max(0,i)*WH}
+function whGo(v,smooth){const w=$('#wh');if(!w)return;v=Math.round(v*100)/100;if(!WV.includes(v)){F.nb=v;w.innerHTML=whHtml();return whInit()}w.scrollTo({top:WV.indexOf(v)*WH,behavior:smooth?'smooth':'auto'})}
+/* Quand la roulette tourne : la valeur au centre devient la quantité */
+document.addEventListener('scroll',e=>{const w=e.target;if(!w||w.id!=='wh'||!F||F.k!=='qty')return;const i=Math.max(0,Math.min(WV.length-1,Math.round(w.scrollTop/WH))),v=WV[i];
+ if(v===Math.round(num(F.nb)*100)/100)return;F.nb=v;w.querySelectorAll('.on').forEach(b=>b.classList.remove('on'));if(w.children[i])w.children[i].classList.add('on');paintQty()},true);
 const uk=u=>u[0]==='p'?'p':u;
 function units(o){const P=[];if(o.sv)P.push(['p',o.svn||'1 portion',o.sv]);(o.ps||[]).forEach((x,i)=>P.push(['p'+(i+1),x[0],x[1]]));if(o.pk&&o.pk!==o.sv)P.push(['pk','1 paquet',o.pk]);return P.concat(UB)}
 const plab=l=>String(l).replace(/^1\s+/,'');
@@ -537,7 +553,7 @@ function formHtml(){const f=F,P=S.prof;
   <div class=qk><b class=fc id=qk>${fmt(v.k)}</b><small>kcal</small></div>
   <div class=qm id=qm>${qm(v)}</div>
   <p class=lbl>Quantité</p><div class=qbox>
-   <div class=qrow><button class=stp data-a=qstep data-n=-1 aria-label=Moins>${SI('minus',22,2.4)}</button><input id=qn inputmode=decimal value="${esc(String(f.nb).replace('.',','))}" autocomplete=off><button class=stp data-a=qstep data-n=1 aria-label=Plus>${SI('plus',22,2.4)}</button></div>
+   <div class=whw><div class=whb></div><div class=wh id=wh>${whHtml()}</div><span class=whu>${esc(whUnit())}</span></div>
    <p class=qg id=qg>${qgLab(v)}</p>
    <div class="chips wr">${U.map(([x,l,g])=>`<button class="chip${f.un===x?' on':''}" data-a=qun data-u=${x}>${x[0]==='p'?`${esc(plab(l))} · ${fmt(g)} g`:l}</button>`).join('')}</div>
    <div class="chips qv" id=qv>${qvHtml()}</div></div>
@@ -597,6 +613,7 @@ function render(){const a=$('#app'),k=TAB+'|'+(SUBV||''),y=a.scrollTop,sh=$('.sh
  a.innerHTML=SUBV==='add'?vAdd():SUBV==='meal'?vMeal():SUBV==='wth'?vWth():SUBV==='my'?vMy():TAB==='prog'?vProg():TAB==='prof'?vProf():vJour();
  if(k===VK)a.scrollTop=y;else a.scrollTop=0;VK=k;
  $('#dlg').innerHTML=F?formHtml():'';if(F&&F===FP){const o=$('#dlg .sov');if(o)o.classList.add('na');const s=$('.sheet');if(s)s.scrollTop=sy}FP=F;
+ if(F&&F.k==='qty')whInit();
  tsBox()}
 function slide(k,upd){const h=document.documentElement;if(matchMedia('(prefers-reduced-motion: reduce)').matches||!k)return upd();
  if(document.startViewTransition){h.dataset.vt=k;try{document.startViewTransition(upd).finished.finally(()=>{delete h.dataset.vt})}catch{delete h.dataset.vt;upd()}return}
@@ -617,15 +634,17 @@ function toast(msg,undo){const b=tsBox(),t=document.createElement('div');t.class
  if(undo)t.querySelector('button').onclick=()=>{clearTimeout(tm);go();undo()}}
 
 /* ============ Journal : ajout / modification ============ */
-function remember(o){const s=S.foods[o.id]||(S.foods[o.id]=Object.assign({},o));s.last=Date.now();touch(s)}
-function openQty(o,m,e){let un=e?e.un||'g':o.sv?'p':'g',nb=e?e.nb||e.q:o.sv?1:100;if(!units(o).some(u=>u[0]===un)){un='g';nb=e?e.q:100}F={k:'qty',fd:o,ms:[m],eid:e?e.id:null,un,nb};render()}
+function remember(o,un,nb){const s=S.foods[o.id]||(S.foods[o.id]=Object.assign({},o));s.last=Date.now();if(un&&nb>0)s.lq={un,nb};touch(s)}
+/* Quantité par défaut : la dernière utilisée pour cet aliment, sinon 1 portion, sinon 100 g */
+function defQ(o){const s=S.foods[o.id],l=s&&s.lq;if(l&&units(o).some(u=>u[0]===l.un))return l;return o.sv?{un:'p',nb:1}:{un:'g',nb:100}}
+function openQty(o,m,e){const dq=defQ(o);let un=e?e.un||'g':dq.un,nb=e?e.nb||e.q:dq.nb;if(!units(o).some(u=>u[0]===un)){un='g';nb=e?e.q:100}F={k:'qty',fd:o,ms:[m],eid:e?e.id:null,un,nb};render()}
 /* Ajoute l'aliment à un ou plusieurs repas ; en modification, l'entrée garde son id dans le premier repas choisi (le sien s'il est coché) */
 function addEntry(o,ms,un,nb,eid){if(!Array.isArray(ms))ms=[ms];const u=units(o).find(x=>x[0]===un)||UB[0],q=num(nb)*u[2];if(!(q>0)||!ms.length)return false;
  const d=dayW(CUR),i0=eid?d.e.findIndex(x=>x.id===eid):-1,e0=i0>=0?d.e[i0]:null,add=[];
  const mk=(m,id)=>({id:id||uid(),fid:o.id,qa:o.qa?1:undefined,n:o.n,b:o.b||'',m,q:r1(q),un,nb:num(nb),svn:un[0]==='p'?u[1]:'',k:o.k,p:o.p,c:o.c,f:o.f});
  let rest=ms;if(e0){const keep=ms.includes(e0.m)?e0.m:ms[0];d.e[i0]=mk(keep,e0.id);rest=ms.filter(m=>m!==keep)}
  for(const m of rest){const x=mk(m);add.push(x.id);d.e.push(x)}
- if(!o.qa)remember(o);touch(d);
+ if(!o.qa)remember(o,un,num(nb));touch(d);
  toast(e0&&!rest.length?'Modifié':`${o.n} · ${fmt(o.k*q/100)} kcal${ms.length>1?' · '+ms.length+' repas':''}`,()=>{const D=dayW(CUR);D.e=D.e.filter(x=>!add.includes(x.id));if(e0){const j=D.e.findIndex(x=>x.id===e0.id);if(j>=0)D.e[j]=e0}touch(D);render()});return true}
 function delEntry(id){const D=dayW(CUR),i=D.e.findIndex(x=>x.id===id);if(i<0)return render();const[x]=D.e.splice(i,1);touch(D);render();
  toast(`${x.n} supprimé`,()=>{const D2=dayW(CUR);D2.e.splice(Math.min(i,D2.e.length),0,x);touch(D2);render()})}
@@ -663,10 +682,11 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='clr'){Q='';RES=null;RERR='';const q=$('#q');q.value='';q.focus();$('#clr').hidden=true;return paintRes()}
  if(a==='retry'){delete SC[Q];return search()}
  if(a==='fd'){const o=food(d.id);if(o)openQty(o,ADDM);return}
- if(a==='qadd'){const o=food(d.id);if(!o)return;addEntry(o,ADDM,o.sv?'p':'g',o.sv?1:100);paintRes();return updBadge()}
+ if(a==='qadd'){const o=food(d.id);if(!o)return;const dq=defQ(o);addEntry(o,ADDM,dq.un,dq.nb);paintRes();return updBadge()}
  if(a==='ent'){const x=dayR(CUR).e.find(y=>y.id===d.id);if(!x)return;if(x.qa){F={k:'qa',eid:x.id,d:{m:x.m,n:x.n==='Ajout rapide'?'':x.n,k:String(x.k).replace('.',','),c:x.c||'',p:x.p||'',f:x.f||''}};return render()}return openQty(entryFood(x),x.m,x)}
  if(a==='qun'){const U=units(F.fd),o=U.find(x=>x[0]===F.un),n=U.find(x=>x[0]===d.u);if(o&&n&&o!==n){const g=num(F.nb)*o[2];F.nb=n[0][0]==='p'?1:n[0]==='g'||n[0]==='ml'?r0(g):Math.round(g/n[2]*100)/100}F.un=d.u;return render()}
- if(a==='qv'||a==='qstep'){const k=uk(F.un);F.nb=a==='qv'?+d.v:Math.max(0,Math.round((num(F.nb)+STEP[k]*d.n)*100)/100);const i=$('#qn');if(i)i.value=String(F.nb).replace('.',',');return paintQty()}
+ if(a==='qv')return whGo(+d.v,1);
+ if(a==='whv')return whGo(WV[+d.i],1);
  if(a==='qml'){const m=d.m,ms=F.ms;F.ms=ms.includes(m)?ms.filter(x=>x!==m):MEALS.map(x=>x[0]).filter(x=>x===m||ms.includes(x));return render()}
  if(a==='fset'){const v=d.v,f=d.f;if(F.k==='qa'){F.d.m=v}else F.d[f]=/^[\d.]+$/.test(v)?+v:v;return render()}
  if(a==='qfav'){const o=F.fd,s=S.foods[o.id]||(S.foods[o.id]=Object.assign({},o));s.fav=!s.fav;touch(s);toast(s.fav?'Ajouté aux favoris':'Retiré des favoris');return render()}
@@ -706,12 +726,11 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
 function setMsg(m){MSG=m;const el=$('#msg');if(el)el.textContent=m}
 document.addEventListener('input',e=>{const t=e.target;
  if(t.id==='q'){Q=t.value.trim();$('#clr').hidden=!t.value;clearTimeout(ST);paintResLocal();ST=setTimeout(search,700);return}
- if(t.id==='qn'){F.nb=t.value;return paintQty()}
  if(t.dataset.fd&&F&&F.d){F.d[t.dataset.fd]=t.value;warn('');return}
  if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.value.trim();persist()}});
 function paintResLocal(){BUSY=Q.length>=3&&!SC[Q];RERR='';RES=SC[Q]||null;paintRes()}
 document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const t=e.target;
- if(t.id==='q'){clearTimeout(ST);t.blur();search()}else if(t.id==='qn')$('[data-a=qok]').click();else if(t.id==='code')$('[data-a=codeok]').click()});
+ if(t.id==='q'){clearTimeout(ST);t.blur();search()}else if(t.id==='code')$('[data-a=codeok]').click()});
 document.addEventListener('change',e=>{if(e.target.id!=='file'||!e.target.files[0])return;const r=new FileReader();
  r.onload=()=>{try{merge(JSON.parse(r.result));S.dirty=1;persist();setMsg('Import terminé.');schedSync();render()}catch{setMsg('Fichier illisible.')}};r.readAsText(e.target.files[0])});
 
@@ -736,7 +755,7 @@ document.addEventListener('touchend',()=>{const h=HZ;HZ=null;if(!h||h.ax!=='x')r
 
 /* Feuille : glisser vers le bas pour la fermer */
 let DR=null;
-document.addEventListener('touchstart',e=>{const sh=e.target.closest('.sheet');DR=null;if(!sh||e.touches.length>1)return;
+document.addEventListener('touchstart',e=>{const sh=e.target.closest('.sheet');DR=null;if(!sh||e.touches.length>1||e.target.closest('.wh'))return;
  DR={sh,y:e.touches[0].clientY,dy:0,ok:sh.scrollTop<=0||!!e.target.closest('.grab')}},{passive:true});
 document.addEventListener('touchmove',e=>{if(!DR||!DR.ok)return;const dy=e.touches[0].clientY-DR.y;
  if(dy<=0){if(DR.dy){DR.dy=0;DR.sh.style.transform=''}return}
