@@ -201,12 +201,13 @@ input:focus{border-color:var(--acc)}
 .qm i{display:block;width:22px;height:4px;border-radius:9px;margin:0 auto 6px}
 .qbox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:12px 0 4px}
 /* Roulette (comme le sélecteur d'iOS) : liste à défilement aimanté, la valeur au centre est la valeur choisie */
-.whw{position:relative;height:200px;margin:0 12px;display:flex;gap:34px}
-.whw .wh{flex:1;min-width:0}
-.whw .wh button{text-align:right;padding:0 6px 0 0}
-.whw .wh.un button{text-align:left;padding:0 6px 0 6px;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.whw .wh.un button.on{font-size:19px;color:var(--act)}
-.whb{position:absolute;left:0;right:0;top:80px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.whw{position:relative;height:200px;margin:0 12px;display:flex;justify-content:center;gap:64px}
+.whc{position:relative;flex:0 0 25%;min-width:0}.whc.un{flex:0 0 48%}
+.whw .wh button{padding:0 6px}
+.whw .wh.un button{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.whw .wh.un button.on{font-size:17px;color:var(--act)}
+/* Deux rectangles violets : un autour du nombre choisi, un autour de l'unité choisie */
+.whb{position:absolute;left:0;right:0;top:80px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--acc) 16%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acc) 45%,transparent)}
 .wh{position:relative;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
 .wh::-webkit-scrollbar{display:none}
 .wh:before,.wh:after{content:"";display:block;height:80px}
@@ -600,7 +601,7 @@ function formHtml(){const f=F,P=S.prof;
   <div class=qk><b class=fc id=qk>${fmt(v.k)}</b><small>kcal</small></div>
   <div class=qm id=qm>${qm(v)}</div>
   <p class=lbl>Quantité</p><div class=qbox>
-   <div class=whw><div class=whb></div><div class=wh id=wh>${whHtml()}</div><div class="wh un" id=whu>${whUHtml()}</div></div>
+   <div class=whw><div class=whc><div class=whb></div><div class=wh id=wh>${whHtml()}</div></div><div class="whc un"><div class=whb></div><div class="wh un" id=whu>${whUHtml()}</div></div></div>
    <p class=qg id=qg>${qgLab(v)}</p>
 </div>
   <button class=big data-a=qok id=qok>${qokLab()}</button>
