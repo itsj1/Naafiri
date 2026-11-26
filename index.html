@@ -201,10 +201,10 @@ input:focus{border-color:var(--acc)}
 .qm i{display:block;width:22px;height:4px;border-radius:9px;margin:0 auto 6px}
 .qbox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:12px 0 4px}
 /* Roulette (comme le sélecteur d'iOS) : liste à défilement aimanté, la valeur au centre est la valeur choisie */
-.whw{position:relative;height:200px;margin:0 12px;display:flex;gap:6px}
+.whw{position:relative;height:200px;margin:0 12px;display:flex;gap:14px}
 .whw .wh{flex:1;min-width:0}
-.whw .wh.un{flex:1.7}
-.whw .wh.un button{font-size:16px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.whw .wh button{text-align:right;padding:0 4px 0 0}
+.whw .wh.un button{text-align:left;padding:0 6px 0 4px;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .whw .wh.un button.on{font-size:19px;color:var(--act)}
 .whb{position:absolute;left:0;right:0;top:80px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--acc) 14%,transparent)}
 .wh{position:relative;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
@@ -574,7 +574,7 @@ const fld=(l,k,v,u,im='decimal',ph='')=>`<label class="orow fld"><b>${l}</b><div
 const UB=[['g','g',1],['kg','kg',1000],['ml','mL',1],['l','L',1000]];
 const WH=40;let WV=[];                          // hauteur d'une ligne de la roulette, valeurs affichées
 function whVals(k,cur){const L=[],a=(f,t,st)=>{for(let x=f;x<=t+1e-9;x+=st)L.push(Math.round(x*100)/100)};
- if(k==='p'){a(.25,3,.25);a(3.5,10,.5);a(11,30,1)}else if(k==='kg'||k==='l'){a(.05,3,.05);a(3.1,10,.1)}else{a(5,500,5);a(510,1000,10);a(1050,3000,50)}
+ if(k==='p'){a(.25,3,.25);a(3.5,10,.5);a(11,30,1)}else if(k==='kg'||k==='l'){a(.05,3,.05);a(3.1,10,.1)}else{a(1,1000,1);a(1010,3000,10)}
  cur=Math.round(num(cur)*100)/100;if(cur>0&&!L.includes(cur)){L.push(cur);L.sort((x,y)=>x-y)}return L}
 const wf=x=>String(Math.round(x*100)/100).replace('.',',');
 function whHtml(){const k=uk(F.un),n=Math.round(num(F.nb)*100)/100;WV=whVals(k,n);return WV.map((x,i)=>`<button class="${x===n?'on':''}" data-a=whv data-i=${i}>${wf(x)}</button>`).join('')}
@@ -582,7 +582,7 @@ const whUHtml=()=>units(F.fd).map(([x,l,g],i)=>`<button class="${F.un===x?'on':'
 function whInit(only){const w=$('#wh'),u=$('#whu');if(w)w.scrollTop=Math.max(0,WV.indexOf(Math.round(num(F.nb)*100)/100))*WH;if(u&&!only)u.scrollTop=Math.max(0,units(F.fd).findIndex(x=>x[0]===F.un))*WH}
 /* Changement d'unité : on garde le même poids (une portion → 1 portion), puis on reconstruit la roulette des nombres */
 function setUnit(un){const U=units(F.fd),o=U.find(x=>x[0]===F.un),n=U.find(x=>x[0]===un);if(!n||o===n)return;
- if(o){const g=num(F.nb)*o[2];F.nb=n[0][0]==='p'?1:n[0]==='g'||n[0]==='ml'?(Math.max(5,Math.round(g/5)*5)):Math.max(.05,Math.round(g/n[2]*20)/20)}else F.nb=n[0][0]==='p'?1:100;
+ if(o){const g=num(F.nb)*o[2];F.nb=n[0][0]==='p'?1:n[0]==='g'||n[0]==='ml'?Math.max(1,Math.round(g)):Math.max(.05,Math.round(g/n[2]*20)/20)}else F.nb=n[0][0]==='p'?1:100;
  F.un=un;const w=$('#wh');if(w){w.innerHTML=whHtml();whInit(1)}paintQty()}
 function whGo(v,smooth){const w=$('#wh');if(!w)return;v=Math.round(v*100)/100;if(!WV.includes(v)){F.nb=v;w.innerHTML=whHtml();return whInit()}w.scrollTo({top:WV.indexOf(v)*WH,behavior:smooth?'smooth':'auto'})}
 /* Quand la roulette tourne : la valeur au centre devient la quantité */
@@ -603,8 +603,8 @@ function formHtml(){const f=F,P=S.prof;
    <div class=whw><div class=whb></div><div class=wh id=wh>${whHtml()}</div><div class="wh un" id=whu>${whUHtml()}</div></div>
    <p class=qg id=qg>${qgLab(v)}</p>
 </div>
-  <p class=lbl>${ed?'Repas':'Ajouter à'}</p><div class=mg>${MEALS.map(([m,l])=>`<button class="${f.ms.includes(m)?'on':''}" data-a=qml data-m=${m}><i>${SI('check',14,3)}</i>${l}</button>`).join('')}</div>
   <button class=big data-a=qok id=qok>${qokLab()}</button>
+  <p class=lbl>${ed?'Repas':'Ajouter à'}</p><div class=mg>${MEALS.map(([m,l])=>`<button class="${f.ms.includes(m)?'on':''}" data-a=qml data-m=${m}><i>${SI('check',14,3)}</i>${l}</button>`).join('')}</div>
   <p class=lbl id=qnl>Valeurs nutritionnelles · ${fmt(v.q)} g</p><div id=qnut>${nutHtml(v)}</div>
   ${ed?`<button class=del data-a=qdel>Supprimer du journal</button>`:''}</div></div>`}
  if(f.k==='qa'){const d=f.d;return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>Ajout rapide</h2><p class=mut>Note juste des calories, sans chercher l’aliment.</p>
@@ -682,7 +682,7 @@ function toast(msg,undo){const b=tsBox(),t=document.createElement('div');t.class
 /* ============ Journal : ajout / modification ============ */
 function remember(o,un,nb){const s=S.foods[o.id]||(S.foods[o.id]=Object.assign({},o));s.last=Date.now();if(un&&nb>0)s.lq={un,nb};touch(s)}
 /* Quantité par défaut : la dernière utilisée pour cet aliment, sinon en grammes (poids d'une portion, ou 100 g) */
-function defQ(o){const s=S.foods[o.id],l=s&&s.lq;if(l&&units(o).some(u=>u[0]===l.un))return l;return{un:'g',nb:o.sv?Math.max(5,Math.round(o.sv)):100}}
+function defQ(o){const s=S.foods[o.id],l=s&&s.lq;if(l&&units(o).some(u=>u[0]===l.un))return l;return{un:'g',nb:o.sv?Math.max(1,Math.round(o.sv)):100}}
 function openQty(o,m,e){const dq=defQ(o);let un=e?e.un||'g':dq.un,nb=e?e.nb||e.q:dq.nb;if(!units(o).some(u=>u[0]===un)){un='g';nb=e?e.q:100}F={k:'qty',fd:o,ms:[m],eid:e?e.id:null,un,nb};render()}
 /* Ajoute l'aliment à un ou plusieurs repas ; en modification, l'entrée garde son id dans le premier repas choisi (le sien s'il est coché) */
 function addEntry(o,ms,un,nb,eid){if(!Array.isArray(ms))ms=[ms];const u=units(o).find(x=>x[0]===un)||UB[0],q=num(nb)*u[2];if(!(q>0)||!ms.length)return false;
