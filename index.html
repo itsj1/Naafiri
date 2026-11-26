@@ -425,11 +425,35 @@ const gear=()=>`<button class=ib data-a=cfg aria-label="Réglages">${SI('gear',2
 const SI=(n,z=22,w=2)=>`<svg width=${z} height=${z} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 
 /* ============ État d'affichage ============ */
-let NUTM='all',TAB='jour',SUBV=null,F=null,FP=null,CUR=TODAY(),ADDM='b',ADT='rec',Q='',RES=null,RERR='',BUSY=false,MSG='',ST=0,VK='';
+let CQX=12,NUTM='all',TAB='jour',SUBV=null,F=null,FP=null,CUR=TODAY(),ADDM='b',ADT='rec',Q='',RES=null,RERR='',BUSY=false,MSG='',ST=0,VK='';
 const RF={},SST=[];                       // RF : aliments vus dans les résultats Open Food Facts ; SST : pile des sous-pages ouvertes
 let UI={o:{}};try{UI=Object.assign(UI,JSON.parse(localStorage.getItem('naafiri-ui')||'{}'))}catch{}   // repas dépliés (propre à cet appareil)
 const saveUI=()=>{try{localStorage.setItem('naafiri-ui',JSON.stringify(UI))}catch{}};
-const food=id=>S.foods[id]||RF[id]||GENM[id];
+const food=id=>S.foods[id]||RF[id]||GENM[id]||CQM[id];
+
+/* ============ CIQUAL (Anses) : ~3 300 aliments génériques, chargés à la première recherche depuis ciqual.json ============ */
+let CQL=null,CQP=null;const CQM={};
+function loadCQ(){if(CQL||CQP)return CQP;CQP=fetch('ciqual.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{const C=j.c,U=j.u;
+  CQL=j.a.map(r=>{const o={id:'cq:'+r[0],n:r[1],b:'',cq:1,nu:{}};C.forEach((k,i)=>{const v=r[2+i];if(v==null)return;if(i<4)o[k]=v;else o.nu[k]=v*U[i]});o.k=o.k||0;o.p=o.p||0;o.c=o.c||0;o.f=o.f||0;o.s=nrm(o.n);CQM[o.id]=o;return o});
+  if(SUBV==='add'&&Q)paintRes()}).catch(()=>{CQP=null});return CQP}
+/* Recherche dans CIQUAL : tous les mots doivent être présents ; on classe d'abord les noms qui commencent par le premier mot, puis les plus courts */
+function cqMatch(q){if(!CQL)return null;const w=nrm(q).split(/\s+/).filter(Boolean);if(!w.length)return[];
+ const re=w.map(x=>new RegExp('(^|[^a-z0-9])'+x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ return CQL.filter(o=>w.every(x=>o.s.includes(x))).map(o=>{let sc=o.s.startsWith(w[0])?0:o.s.indexOf(w[0])<20?1:2;if(!re.every(r=>r.test(o.s)))sc+=2;const hd=o.s.split(',')[0].split(/\s+/).filter(Boolean);sc+=.4*hd.filter(x=>!w.includes(x)).length;if(/\bcru|\bcuit/.test(o.s))sc-=.3;return[sc+o.s.length/300,o]}).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+
+/* ============ USDA FoodData Central (facultatif, clé gratuite dans Réglages ; noms en anglais) ============ */
+const USN={'208':'k','203':'p','205':'c','204':'f','291':'fiber','269':'sugars','606':'saturated-fat','645':'monounsaturated-fat','646':'polyunsaturated-fat','605':'trans-fat','221':'alcohol','601':'cholesterol','255':'water','307':'sodium',
+ '320':'vitamin-a','404':'vitamin-b1','405':'vitamin-b2','406':'vitamin-pp','410':'pantothenic-acid','415':'vitamin-b6','417':'vitamin-b9','418':'vitamin-b12','401':'vitamin-c','328':'vitamin-d','323':'vitamin-e','430':'vitamin-k',
+ '301':'calcium','303':'iron','304':'magnesium','305':'phosphorus','306':'potassium','309':'zinc','312':'copper','315':'manganese','317':'selenium','313':'fluoride','421':'choline'};
+const USF={G:1,MG:1e-3,UG:1e-6};
+function usFood(x){const o={id:'us:'+x.fdcId,n:x.description,b:'USDA',us:1,k:0,p:0,c:0,f:0,nu:{}};let kc=null;
+ for(const n of x.foodNutrients||[]){const k=USN[n.nutrientNumber],v=+n.value;if(!isFinite(v))continue;
+  if(n.nutrientNumber==='208'||((n.nutrientNumber==='957'||n.nutrientNumber==='958')&&kc==null)){if(String(n.unitName).toUpperCase()==='KCAL')kc=v;continue}
+  if(!k)continue;if('pcf'.includes(k)&&k.length===1)o[k]=r1(v);else if(USF[String(n.unitName).toUpperCase()])o.nu[k]=v*USF[String(n.unitName).toUpperCase()]}
+ if(kc==null)return null;o.k=r1(kc);if(o.nu.sodium!=null)o.nu.salt=o.nu.sodium*2.5;RF[o.id]=o;return o}
+async function usSearch(q){const r=await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(S.cfg.usda)}&query=${encodeURIComponent(q)}&pageSize=20&dataType=${encodeURIComponent('Foundation,SR Legacy,Survey (FNDDS)')}`,{signal:TO(15e3)});
+ if(r.status===403||r.status===401)throw new Error('Clé USDA refusée : vérifie-la dans les Réglages.');if(r.status===429)throw new Error('Limite USDA atteinte, réessaie plus tard.');if(!r.ok)throw new Error('USDA : erreur '+r.status);
+ const j=await r.json();return(j.foods||[]).map(usFood).filter(Boolean)}
 
 /* ============ Open Food Facts ============ */
 const OFF='https://world.openfoodfacts.org';
@@ -438,18 +462,30 @@ function offFood(p){const n=p.nutriments||{};let k=n['energy-kcal_100g'];if(k==n
  const sv=+p.serving_quantity||0,o={id:'off:'+p.code,code:p.code,n:(p.product_name_fr||p.product_name||'Sans nom').trim(),b:(p.brands||'').split(',')[0].trim(),
   k:r1(k),p:r1(n.proteins_100g),c:r1(n.carbohydrates_100g),f:r1(n.fat_100g),su:n.sugars_100g,sf:n['saturated-fat_100g'],fi:n.fiber_100g,sa:n.salt_100g,
   img:p.image_front_small_url||'',ns:/^[a-e]$/.test(p.nutriscore_grade||'')?p.nutriscore_grade:''};
- if(sv>0&&sv<3000){o.sv=r1(sv);let n=(p.serving_size||'').replace(/\s*\(.*\)\s*$/,'').trim().slice(0,30);if(!n||/^[\d.,\s]+(g|ml|cl)?$/i.test(n))n='1 portion';o.svn=n}
+ if(sv>0&&sv<3000){o.sv=r1(sv);let n=(p.serving_size||'').replace(/\s*\(.*\)\s*$/,'').trim().slice(0,30);if(!n||/^[\d.,\s]*(g|gr|grams?|grammes?|ml|cl|servings?|portions?)?$/i.test(n))n='1 portion';o.svn=n}
  const pk=+p.product_quantity||0;if(pk>0&&pk<1e4&&/^(g|ml|)$/i.test(p.product_quantity_unit||'')&&pk!==o.sv)o.pk=r1(pk);
  const nu={};for(const k of NK){const v=n[k+'_100g'];if(v!=null&&v!==''&&isFinite(+v))nu[k]=+v}if(nu.alcohol!=null)nu.alcohol=r1(nu.alcohol*.789);  // alcool : % vol → g
  if(Object.keys(nu).length)o.nu=nu;
  RF[o.id]=o;return o}
-async function offSearch(q){const u=`${OFF}/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n&tagtype_0=countries&tag_contains_0=contains&tag_0=france&fields=${FLD}`;
- const r=await fetch(u,{signal:TO(15e3)});if(!r.ok)throw new Error(r.status===429||r.status===503?'Open Food Facts est saturé, réessaie dans une minute.':'Erreur '+r.status);
- const j=await r.json();return(j.products||[]).map(offFood).filter(Boolean)}
+async function offGet(q,fr){const u=`${OFF}/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=30&sort_by=unique_scans_n${fr?'&tagtype_0=countries&tag_contains_0=contains&tag_0=france':''}&fields=${FLD}`;
+ for(let t=0;;t++){let r;try{r=await fetch(u,{signal:TO(15e3)})}catch(e){if(t)throw e.name==='AbortError'?e:new Error('Open Food Facts est saturé, réessaie dans une minute.');await new Promise(o=>setTimeout(o,1500));continue}
+  if(r.ok){let j;try{j=await r.json()}catch{if(t)throw new Error('Réponse illisible d’Open Food Facts.');await new Promise(o=>setTimeout(o,1500));continue}return(j.products||[]).map(offFood).filter(Boolean)}
+  if(t||![429,502,503,504].includes(r.status))throw new Error(r.status===429||r.status===503?'Open Food Facts est saturé, réessaie dans une minute.':'Erreur '+r.status);await new Promise(o=>setTimeout(o,1500))}}
+/* Secours quand la recherche classique est refusée (trop de demandes) : le nouveau moteur donne les codes, puis on lit chaque fiche produit */
+async function salSearch(q){const r=await fetch(`https://search.openfoodfacts.org/search?q=${encodeURIComponent(q+' countries:"en:france"')}&sort_by=-unique_scans_n&page_size=15&langs=fr&fields=code`,{signal:TO(15e3)});
+ if(!r.ok)throw new Error('Open Food Facts est saturé, réessaie dans une minute.');const C=((await r.json()).hits||[]).map(h=>h.code).filter(Boolean);
+ const L=(await Promise.all(C.map(c=>offCode(c).catch(()=>null)))).filter(Boolean);if(C.length&&!L.length)throw new Error('Open Food Facts est saturé, réessaie dans une minute.');return L}
+/* D'abord les produits vendus en France ; s'il y en a très peu, on complète avec le reste du monde */
+async function offSearch(q){let L;try{L=await offGet(q,1)}catch(e){try{return offRank(q,await salSearch(q))}catch{throw e}}if(L.length>=3)return offRank(q,L);let W=[];try{W=await offGet(q,0)}catch{}const seen=new Set(L.map(o=>o.id));return offRank(q,L.concat(W.filter(o=>!seen.has(o.id))))}
+/* Reclassement : d'abord les produits dont le nom (ou la marque) contient tous les mots cherchés, puis une partie, en gardant l'ordre de popularité */
+function offRank(q,L){const w=nrm(q).split(/\s+/).filter(x=>x.length>1);if(!w.length)return L;const sc=o=>{const s=nrm(o.n+' '+(o.b||''));const n=w.filter(x=>s.includes(x)).length;return n===w.length?0:n?1:2};
+ return L.map((o,i)=>[sc(o),i,o]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).map(x=>x[2])}
 async function offCode(code){const r=await fetch(`${OFF}/api/v2/product/${encodeURIComponent(code)}.json?fields=${FLD}`,{signal:TO()});
  if(r.status===404)return null;if(!r.ok)throw new Error('Erreur '+r.status);const j=await r.json();return j.status===1&&j.product?offFood(Object.assign({code},j.product)):null}
 const SC={};
-async function search(){const q=Q;if(q.length<3){RES=null;RERR='';BUSY=false;return paintRes()}
+let USR=null,USE='',USB=false;const USC={};
+async function search(){const q=Q;loadCQ();if(q.length<3){RES=null;RERR='';BUSY=false;USR=null;USE='';USB=false;return paintRes()}
+ if(S.cfg.usda&&!USC[q]){USB=true;USE='';usSearch(q).then(L=>{USC[q]=L;if(q===Q){USR=L;USB=false;paintRes()}}).catch(e=>{if(q===Q){USR=null;USB=false;USE=e.name==='AbortError'?'Pas de réponse de l’USDA.':e.message;paintRes()}})}else{USR=USC[q]||null;USB=false}
  if(SC[q]){RES=SC[q];RERR='';BUSY=false;return paintRes()}
  BUSY=true;RERR='';paintRes();
  try{const L=await offSearch(q);if(q!==Q)return;SC[q]=RES=L}catch(e){if(q!==Q)return;RES=null;RERR=e.name==='AbortError'?'Pas de réponse d’Open Food Facts (réseau ?).':e.message}
@@ -482,7 +518,7 @@ const qtyLab=e=>e.qa?'Ajout rapide':e.un&&e.un[0]==='p'&&e.svn?`${f1(e.nb)} × $
 
 /* Page « Ajouter un aliment » */
 function frow(o){const sub=o.sv?`${o.svn} (${fmt(o.sv)} g) · ${fmt(o.k*o.sv/100)} kcal`:`${fmt(o.k)} kcal / 100 g`;
- return`<div class=fr><button class=fo data-a=fd data-id="${esc(o.id)}"><span class=th>${o.img?`<img src="${esc(o.img)}" alt="" loading=lazy>`:esc((o.n||'?')[0].toUpperCase())}</span><div class=tx><b>${esc(o.n)}</b><small>${o.ns?`<span class="ns ${o.ns}">${o.ns.toUpperCase()}</span>`:''}${o.b?esc(o.b)+' · ':''}${esc(sub)}</small></div></button>${inMeal(o.id)?`<button class="qa in" data-a=qadd data-id="${esc(o.id)}" aria-label="Déjà dans ce repas, en ajouter encore">${SI('check',18,2.6)}</button>`:`<button class=qa data-a=qadd data-id="${esc(o.id)}" aria-label="Ajout direct">${SI('plus',18,2.4)}</button>`}</div>`}
+ return`<div class=fr><button class=fo data-a=fd data-id="${esc(o.id)}"><span class=th>${o.img?`<img src="${esc(o.img)}" alt="" loading=lazy onerror="this.replaceWith(document.createTextNode('${esc((o.n||'?')[0].toUpperCase()).replace(/'/g,'')}'))">`:esc((o.n||'?')[0].toUpperCase())}</span><div class=tx><b>${esc(o.n)}</b><small>${o.ns?`<span class="ns ${o.ns}">${o.ns.toUpperCase()}</span>`:''}${o.b?esc(o.b)+' · ':''}${esc(sub)}</small></div></button>${inMeal(o.id)?`<button class="qa in" data-a=qadd data-id="${esc(o.id)}" aria-label="Déjà dans ce repas, en ajouter encore">${SI('check',18,2.6)}</button>`:`<button class=qa data-a=qadd data-id="${esc(o.id)}" aria-label="Ajout direct">${SI('plus',18,2.4)}</button>`}</div>`}
 const mealE=()=>dayR(CUR).e.filter(e=>e.m===ADDM);
 const inMeal=id=>mealE().some(e=>e.fid===id);
 const badge=()=>{const n=mealE().length;return`<button class="cnt${n?'':' z'}" id=cnt data-a=sub data-s=meal aria-label="Aliments de ce repas">${n}</button>`};
@@ -498,12 +534,15 @@ function resHtml(){if(!Q){const all=Object.values(S.foods);
   <div class=two><button class="big ol" data-a=fqa>${SI('bolt',18)}Ajout rapide</button><button class="big ol" data-a=fcf>${SI('edit',18)}Créer un aliment</button></div>`}
  const M=localMatch(Q);let h='';
  if(M.mine.length)h+=`<p class=lbl>Mes aliments</p>${flist(M.mine)}`;
- if(M.gen.length)h+=`<p class=lbl>Aliments de base</p>${flist(M.gen)}`;
+ const CQ=cqMatch(Q);
+ if(CQ){if(CQ.length){const n=CQ.length,sh=CQ.slice(0,CQX);h+=`<p class=lbl>Aliments génériques · CIQUAL (${n})</p>${flist(sh)}${n>CQX?`<button class="big ol" data-a=cqmore>Voir plus d’aliments génériques (${n-CQX})</button>`:''}`}}
+ else if(M.gen.length)h+=`<p class=lbl>Aliments de base</p>${flist(M.gen)}`;
  h+=`<p class=lbl>Open Food Facts</p>`;
  if(Q.length<3)h+=`<p class=emp>Tape au moins 3 lettres.</p>`;
  else if(BUSY)h+=`<div class=spin></div>`;
  else if(RERR)h+=`<p class=emp>${esc(RERR)}<br><button class=lnk data-a=retry>Réessayer</button></p>`;
  else if(RES)h+=flist(RES)||`<p class=emp>Aucun produit trouvé.</p>`;
+ if(S.cfg.usda&&Q.length>=3){h+=`<p class=lbl>USDA · noms en anglais</p>`;if(USB)h+=`<div class=spin></div>`;else if(USE)h+=`<p class=emp>${esc(USE)}</p>`;else if(USR)h+=flist(USR)||`<p class=emp>Rien trouvé à l’USDA (essaie en anglais : « greek yogurt »…).</p>`}
  return h+`<button class="big ol" data-a=fcf>${SI('edit',18)}Créer « ${esc(Q)} »</button>`}
 function vAdd(){return`<header class=sh style="margin-top:12px"><button class=ib data-a=back>${SI('l',20)}</button><h1 class=fc>Ajouter</h1>${badge()}</header>
  <div class=chips>${MEALS.map(([m,l])=>`<button class="chip${ADDM===m?' on':''}" data-a=addm data-m=${m}>${l}</button>`).join('')}</div>
@@ -643,9 +682,12 @@ function formHtml(){const f=F,P=S.prof;
   <label class="orow fld"><b>Fichier</b><input data-cfg=path value="${esc(S.cfg.path)}" autocapitalize=off autocorrect=off spellcheck=false></label>
   <label class="orow fld"><b>Jeton</b><input data-cfg=token type=password value="${esc(S.cfg.token)}" autocomplete=off></label>
   <button class="orow go" data-a=sync>Synchroniser maintenant<span id=msg>${esc(MSG)}</span></button></div>
+ <p class=lbl>Base USDA (facultatif)</p><div class=ocard>
+  <div class="orow hint">Ajoute les aliments de la base américaine USDA aux recherches (noms en anglais). Crée une clé gratuite sur <a href="https://fdc.nal.usda.gov/api-key-signup" target=_blank rel=noopener>fdc.nal.usda.gov</a> puis colle-la ici. Elle reste sur cet appareil.</div>
+  <label class="orow fld"><b>Clé API USDA</b><input data-cfg=usda type=password value="${esc(S.cfg.usda||'')}" autocomplete=off autocapitalize=off spellcheck=false placeholder="Laisse vide pour ne pas utiliser l’USDA"></label></div>
  <p class=lbl>Sauvegarde</p><div class=ocard><button class="orow go" data-a=exp>Exporter mes données (JSON)</button><button class="orow go" data-a=imp>Importer un fichier</button></div>
  <input type=file id=file accept="application/json,.json" hidden>
- <p class=cred>Données produits : <a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a>, sous licence ODbL. Les valeurs des aliments de base sont des moyennes indicatives. Calcul des besoins : formule de Mifflin-St Jeor.</p></div></div>`;
+ <p class=cred>Aliments génériques : table <a href="https://ciqual.anses.fr" target=_blank rel=noopener>CIQUAL 2025 de l’Anses</a> (Licence Ouverte Etalab). Données produits : <a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a>, sous licence ODbL. Base facultative : <a href="https://fdc.nal.usda.gov" target=_blank rel=noopener>USDA FoodData Central</a> (domaine public). Calcul des besoins : formule de Mifflin-St Jeor.</p></div></div>`;
  if(f.k==='ask')return`<div class="sov pop" data-a=fno><div class=dpop><h3>${esc(f.t)}</h3><p>${esc(f.m)}</p><button class="dbt red" data-a=askok>${esc(f.ok)}</button><button class="dbt tx" data-a=fno>Annuler</button></div></div>`;
  return''}
 const qm=v=>[['Glucides','c','--cb'],['Protéines','p','--pr'],['Lipides','f','--fa']].map(([l,x,c])=>`<div><i style="background:var(${c})"></i><b>${f1(v[x])} g</b><small>${l}</small></div>`).join('');
@@ -735,7 +777,7 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='back')return history.back();
  if(a==='dd'){CUR=addD(CUR,+d.n);return render()}
  if(a==='dsel'){CUR=d.d;return render()}
- if(a==='add'){ADDM=d.m;Q='';RES=null;RERR='';return openSub('add')}
+ if(a==='add'){ADDM=d.m;Q='';RES=null;RERR='';loadCQ();return openSub('add')}
  if(a==='addm'){ADDM=d.m;return render()}
  if(a==='fold'){if(!dayR(CUR).e.some(x=>x.m===d.m))return;UI.o[d.m]=!UI.o[d.m];saveUI();return render()}
  if(a==='edel')return delEntry(d.id);
@@ -745,6 +787,7 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='fd'){const o=food(d.id);if(o)openQty(o,ADDM);return}
  if(a==='qadd'){const o=food(d.id);if(!o)return;const dq=defQ(o);addEntry(o,ADDM,dq.un,dq.nb);paintRes();return updBadge()}
  if(a==='ent'){const x=dayR(CUR).e.find(y=>y.id===d.id);if(!x)return;if(x.qa){F={k:'qa',eid:x.id,d:{m:x.m,n:x.n==='Ajout rapide'?'':x.n,k:String(x.k).replace('.',','),c:x.c||'',p:x.p||'',f:x.f||''}};return render()}return openQty(entryFood(x),x.m,x)}
+ if(a==='cqmore'){CQX+=30;return paintRes()}
  if(a==='nut'){NUTM=d.m;return openSub('nut')}
  if(a==='qfull'){F.full=!F.full;return render()}
  if(a==='whu'){const u=$('#whu');if(u)u.scrollTo({top:+d.i*WH,behavior:'smooth'});return}
@@ -790,7 +833,7 @@ document.addEventListener('input',e=>{const t=e.target;
  if(t.id==='q'){Q=t.value.trim();$('#clr').hidden=!t.value;clearTimeout(ST);paintResLocal();ST=setTimeout(search,700);return}
  if(t.dataset.fd&&F&&F.d){F.d[t.dataset.fd]=t.value;warn('');return}
  if(t.dataset.cfg){S.cfg[t.dataset.cfg]=t.value.trim();persist()}});
-function paintResLocal(){BUSY=Q.length>=3&&!SC[Q];RERR='';RES=SC[Q]||null;paintRes()}
+function paintResLocal(){BUSY=Q.length>=3&&!SC[Q];RERR='';RES=SC[Q]||null;CQX=12;USR=USC[Q]||null;USB=!!S.cfg.usda&&Q.length>=3&&!USC[Q];USE='';paintRes()}
 document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const t=e.target;
  if(t.id==='q'){clearTimeout(ST);t.blur();search()}else if(t.id==='code')$('[data-a=codeok]').click()});
 document.addEventListener('change',e=>{if(e.target.id!=='file'||!e.target.files[0])return;const r=new FileReader();

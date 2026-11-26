@@ -3,9 +3,9 @@
 // et si le réseau est absent ou trop lent (> 3 s), on sert la copie gardée en cache.
 // Les appels à api.github.com (synchro) ne sont JAMAIS interceptés.
 
-const CACHE = 'naafiri-v14';
+const CACHE = 'naafiri-v15';
 // zxing.min.js (lecteur de codes-barres pour l’iPhone) n’est pas préchargé : il est mis en cache au premier scan.
-const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+const FILES = ['./', './index.html', './ciqual.json', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
