@@ -3,7 +3,7 @@
 // et si le réseau est absent ou trop lent (> 3 s), on sert la copie gardée en cache.
 // Les appels à api.github.com (synchro) ne sont JAMAIS interceptés.
 
-const CACHE = 'naafiri-v22';
+const CACHE = 'naafiri-v23';
 // zxing.min.js (lecteur de codes-barres pour l’iPhone) n’est pas préchargé : il est mis en cache au premier scan.
 const FILES = ['./', './index.html', './ciqual.json', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 

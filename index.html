@@ -325,6 +325,7 @@ html[data-vt=back]::view-transition-new(root){animation:vtInL .32s cubic-bezier(
 /* ============ Naafiri — compteur de calories (inspiré de Yazio) ============
    Données : localStorage + synchro optionnelle dans un dépôt GitHub privé (comme Muscu et MangaTime).
    Aliments : Open Food Facts (recherche + code-barres, sans clé) et une petite table d'aliments de base intégrée. */
+const APPV=23;                            // même numéro que CACHE dans sw.js (naafiri-vN)
 const K='naafiri-v1',DAY=864e5;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -476,10 +477,10 @@ const saveUI=()=>{try{localStorage.setItem('naafiri-ui',JSON.stringify(UI))}catc
 const food=id=>id&&id.startsWith('tp:')?tpFood(S.tp[id.slice(3)]):S.foods[id]||RF[id]||GENM[id]||CQM[id];
 
 /* ============ CIQUAL (Anses) : ~3 300 aliments génériques, chargés à la première recherche depuis ciqual.json ============ */
-let CQL=null,CQP=null;const CQM={};
-function loadCQ(){if(CQL||CQP)return CQP;CQP=fetch('ciqual.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{const C=j.c,U=j.u;
+let CQL=null,CQP=null,CQE='';const CQM={};
+function loadCQ(){if(CQL||CQP)return CQP;CQE='';CQP=fetch('ciqual.json').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{const C=j.c,U=j.u;
   CQL=j.a.map(r=>{const o={id:'cq:'+r[0],n:r[1],b:'',cq:1,nu:{}};C.forEach((k,i)=>{const v=r[2+i];if(v==null)return;if(i<4)o[k]=v;else o.nu[k]=v*U[i]});o.k=o.k||0;o.p=o.p||0;o.c=o.c||0;o.f=o.f||0;o.s=nrm(o.n);const ps=cqPort(o.s);if(ps)o.ps=ps;CQM[o.id]=o;return o});
-  if(SUBV==='add'&&Q)paintRes()}).catch(()=>{CQP=null});return CQP}
+  if(SUBV==='add'&&Q)paintRes()}).catch(()=>{CQP=null;CQE='Impossible de charger les aliments génériques (réseau ?).';if(SUBV==='add'&&Q)paintRes()});return CQP}
 /* Portions courantes des aliments CIQUAL, d'après leur nom (sans accents, en minuscules) : la première règle qui correspond gagne */
 const CQR=[[/^banane, chair/,[['1 banane',120],['1 petite banane',90],['1 grosse banane',150]]],[/^pomme de terre/,[['1 pomme de terre',100],['1 portion',200]]],[/^pomme, /,[['1 pomme',150]]],
  [/^poire, /,[['1 poire',160]]],[/^orange, /,[['1 orange',150]]],[/^kiwi/,[['1 kiwi',75]]],[/^(clementine|mandarine)/,[['1 fruit',70]]],[/^(peche|nectarine)/,[['1 fruit',150]]],[/^abricot, /,[['1 abricot',45]]],
@@ -497,9 +498,25 @@ const CQR=[[/^banane, chair/,[['1 banane',120],['1 petite banane',90],['1 grosse
  [/^chips/,[['1 petit paquet',30]]],[/^biscuit/,[['1 biscuit',10]]],[/^(cereales|muesli|flocon)/,[['1 bol',40]]]];
 const cqPort=s=>{for(const[r,p]of CQR)if(r.test(s))return p;return null};
 /* Recherche dans CIQUAL : tous les mots doivent être présents ; on classe d'abord les noms qui commencent par le premier mot, puis les plus courts */
-function cqMatch(q){if(!CQL)return null;const w=nrm(q).split(/\s+/).filter(Boolean);if(!w.length)return[];
- const re=w.map(x=>new RegExp('(^|[^a-z0-9])'+x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- return CQL.filter(o=>w.every(x=>o.s.includes(x))).map(o=>{let sc=o.s.startsWith(w[0])?0:o.s.indexOf(w[0])<20?1:2;if(!re.every(r=>r.test(o.s)))sc+=2;const hd=o.s.split(',')[0].split(/\s+/).filter(Boolean);sc+=.4*hd.filter(x=>!w.includes(x)).length;if(/\bcru|\bcuit/.test(o.s))sc-=.3;return[sc+o.s.length/300,o]}).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+/* Versions « de tous les jours » mises en tête des résultats CIQUAL */
+const CQFAV=[/^pain \(aliment moyen\)/,/^baguette/,/^oeuf (cru|dur|au plat)/,/^riz blanc, cuit/,/^pates seches, standard, cuites/,/^cafe expresso/,/^cafe, instantane, sans sucres ajoutes, pret a boire/,/^huile d'olive vierge extra/,
+ /^lait demi-ecreme, uht$/,/^jambon cuit, choix$/,/^the infuse/,/^eau du robinet/,/^yaourt ou lait fermente, nature$/,/^beurre a 80% mg minimum, doux/,/^sucre blanc/,/^emmental ou emmenthal$/,/^vin rouge/,/^jus d'orange, pur jus/,
+ /^compote de pomme, preemballee/,/^flocons d'avoine$/,/^fromage blanc, nature, 2-3% mg/,/^pomme, chair et peau, crue/,/^banane, chair sans peau, crue/,/^poulet, filet sans peau, (cuit|roti|grille)/,/^biere "coeur de marche"/,/^soupe \(aliment moyen\)/];
+const CQCRU=/^(riz|pates|semoule|quinoa|lentille|haricot|pois chiche|boulgour)/;
+/* Mot au singulier, pour que « pâte cuite » et « pâtes cuites » se valent */
+const sg=w=>w.length>3?w.replace(/(s|x)$/,''):w;
+const toks=s=>s.split(/[^a-z0-9]+/).filter(Boolean).map(sg);
+function cqMatch(q){if(!CQL)return null;const w=nrm(q).split(/[^a-z0-9]+/).filter(Boolean).map(sg);if(!w.length)return[];
+ return CQL.filter(o=>w.every(x=>o.s.includes(x))).map(o=>{const T=o.t||(o.t=toks(o.s)),hd=toks(o.s.split(',')[0]);
+  let sc=T[0]===w[0]?0:o.s.startsWith(w[0])?1:2;               // le nom commence par le premier mot cherché
+  if(!w.every(x=>T.includes(x)))sc+=2;                         // mots entiers (au singulier près) plutôt que des bouts de mots
+  sc+=.4*hd.filter(x=>!w.includes(x)).length;                  // peu de mots en plus avant la première virgule
+  if(o.ps)sc-=.8;                                              // aliment courant (il a des portions : pâtes, riz, pain…)
+  if(CQFAV.some(r=>r.test(o.s)))sc-=2;                         // version de tous les jours (pain courant, œuf, riz blanc cuit…)
+  if(/\(aliment moyen\)/.test(o.s))sc-=.6;                    // valeur représentative
+  if(CQCRU.test(o.s)&&/\bcru/.test(o.s)&&!w.includes('cru'))sc+=.8; // riz, pâtes, légumineuses : cuits avant crus
+  if(/\bcru|\bcuit/.test(o.s))sc-=.3;
+  return[sc+o.s.length/300,o]}).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
 
 /* ============ USDA FoodData Central (facultatif, clé gratuite dans Réglages ; noms en anglais) ============ */
 const USN={'208':'k','203':'p','205':'c','204':'f','291':'fiber','269':'sugars','606':'saturated-fat','645':'monounsaturated-fat','646':'polyunsaturated-fat','605':'trans-fat','221':'alcohol','601':'cholesterol','255':'water','307':'sodium',
@@ -598,7 +615,7 @@ function resHtml(){if(!Q){const all=Object.values(S.foods);
  if(M.mine.length)h+=`<p class=lbl>Mes aliments</p>${flist(M.mine)}`;
  const CQ=cqMatch(Q);
  if(CQ){if(CQ.length){const n=CQ.length,sh=CQ.slice(0,CQX);h+=`<p class=lbl>Aliments génériques · CIQUAL (${n})</p>${flist(sh)}${n>CQX?`<button class="big ol" data-a=cqmore>Voir plus d’aliments génériques (${n-CQX})</button>`:''}`}}
- else if(M.gen.length)h+=`<p class=lbl>Aliments de base</p>${flist(M.gen)}`;
+ else{h+=`<p class=lbl>Aliments génériques · CIQUAL</p>`+(CQE?`<p class=emp>${esc(CQE)}<br><button class=lnk data-a=cqretry>Réessayer</button></p>`:`<div class=spin></div>`);if(M.gen.length)h+=`<p class=lbl>Aliments de base</p>${flist(M.gen)}`}
  h+=`<p class=lbl>Open Food Facts</p>`;
  if(Q.length<3)h+=`<p class=emp>Tape au moins 3 lettres.</p>`;
  else if(BUSY)h+=`<div class=spin></div>`;
@@ -776,7 +793,7 @@ function formHtml(){const f=F,P=S.prof;
   ${MI('sync','sync','Synchroniser maintenant',esc(MSG)||'Envoie et récupère tes données.',1)}
   <div class=opl>BASE USDA (FACULTATIF)</div><div class=ocard>${fl('usda','Clé API USDA','Laisse vide pour ne pas utiliser l’USDA','type=password')}</div>
   <div class=opl>SAUVEGARDE</div>${MI('exp','down','Exporter mes données','Télécharge une copie de ton journal.')}${MI('imp','upl','Importer un fichier','Fusionne une sauvegarde avec tes données.')}<input id=file type=file accept="application/json,.json" hidden>
-  <p class=cred>Aliments génériques : table <a href="https://ciqual.anses.fr" target=_blank rel=noopener>CIQUAL 2025 de l’Anses</a> (Licence Ouverte Etalab). Données produits : <a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a>, sous licence ODbL. Base facultative : <a href="https://fdc.nal.usda.gov" target=_blank rel=noopener>USDA FoodData Central</a> (domaine public). Calcul des besoins : formule de Mifflin-St Jeor.</p></div></div>`}
+  <p class=cred>Aliments génériques : table <a href="https://ciqual.anses.fr" target=_blank rel=noopener>CIQUAL 2025 de l’Anses</a> (Licence Ouverte Etalab). Données produits : <a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a>, sous licence ODbL. Base facultative : <a href="https://fdc.nal.usda.gov" target=_blank rel=noopener>USDA FoodData Central</a> (domaine public). Calcul des besoins : formule de Mifflin-St Jeor.<br>Version ${APPV}</p></div></div>`}
  if(f.k==='copy'){const d=f.d,E=f.src==='day'?dayR(CUR).e:mealE(),t=TODAY(),opts=[[addD(t,-1),'Hier'],[t,'Aujourd’hui'],[addD(t,1),'Demain']].filter(x=>x[0]!==CUR);
   return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>${f.src==='day'?'Copier la journée':'Copier le '+MN[f.m].toLowerCase()}</h2><p class=mut>${E.length} aliment${E.length>1?'s':''} · ${fmt(sum(E).k)} kcal · de ${dayTitle(CUR).toLowerCase()}</p>
   <p class=lbl>Vers le</p>${chips('to',opts,d.to)}<div class=ocard><label class="orow fld"><b>Ou une autre date</b><input class=soft type=date id=cpd value="${d.to}"></label></div>
@@ -914,6 +931,7 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='tpdel'){const id=TPE.id;F={k:'ask',t:'Supprimer ce repas ?',m:'Il disparaîtra de « Mes repas ». Ton journal n’est pas modifié.',ok:'Supprimer',go:()=>{delete S.tp[id];S.del.t[id]=Date.now();S.dirty=1;persist();schedSync();TPE=null;history.back()}};return render()}
  if(a==='calm'){const[y,m]=CALM.split('-').map(Number),x=new Date(y,m-1+(+d.n),1);CALM=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');return render()}
  if(a==='cday'){CUR=d.d;TAB='jour';return render()}
+ if(a==='cqretry'){CQE='';loadCQ();return paintRes()}
  if(a==='cqmore'){CQX+=30;return paintRes()}
  if(a==='nut'){NUTM=d.m;return openSub('nut')}
  if(a==='qfull'){F.full=!F.full;return render()}
@@ -1047,6 +1065,7 @@ function applyTheme(){const t=S.cfg.theme||'auto',r=document.documentElement,a=A
  st.textContent=`:root{${L}}@media(prefers-color-scheme:dark){:root:not([data-theme=light]){${D}}}:root[data-theme=dark]{${D}}`;
  document.querySelectorAll('meta[name=theme-color]').forEach(m=>{const dk=/dark/.test(m.media);m.setAttribute('content',t==='light'?'#f6f4f8':t==='dark'?'#241e2b':dk?'#241e2b':'#f6f4f8')})}
 applyTheme();
+setTimeout(loadCQ,1500);                // la table CIQUAL est prête avant la première recherche
 history.replaceState({},'');
 render();sync();
 </script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
