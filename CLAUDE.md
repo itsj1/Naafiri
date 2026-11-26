@@ -36,7 +36,8 @@ App personnelle (un seul utilisateur) pour **compter les calories**, inspirée d
 ## Sources
 
 - **Open Food Facts** (sans clé) : recherche `cgi/search.pl` filtrée sur la France (limitée à ~10 requêtes/min : recherche après 700 ms de pause, résultats gardés dans `SC`), et code-barres `api/v2/product/<code>.json`. Mention ODbL obligatoire, présente dans la feuille Réglages.
-- Scan : `BarcodeDetector` natif si disponible (Android), sinon `zxing.min.js` ; saisie manuelle du code en secours.
+- Scan : `BarcodeDetector` natif si disponible (Android), sinon `zxing.min.js` (`MultiFormatReader` + `TRY_HARDER`). Caméra en haute résolution ; on ne lit que la zone du cadre (image recadrée sur un canvas, boucle maison) ; formats EAN-13, EAN-8, UPC-A seulement (UPC-E retiré : faux positifs) ; `gtin()` vérifie le chiffre de contrôle et met l’UPC-A en EAN-13 ; un code n’est accepté que **lu 2 fois à l’identique**. Saisie manuelle en secours (préremplie avec le code si le produit est introuvable). Le code du produit s’affiche dans la feuille quantité.
+- Test du scan sans téléphone : Chromium avec `--use-fake-device-for-media-stream --use-file-for-fake-video-capture=<vidéo .mjpeg d’un code EAN-13 généré>`.
 
 ## Synchro entre appareils
 

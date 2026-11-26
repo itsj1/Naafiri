@@ -599,7 +599,7 @@ const plab=l=>String(l).replace(/^1\s+/,'');
 function qcalc(){const o=F.fd,u=units(o).find(x=>x[0]===F.un)||UB[0],q=num(F.nb)*u[2];return{q,u,k:o.k*q/100,p:o.p*q/100,c:o.c*q/100,f:o.f*q/100}}
 function formHtml(){const f=F,P=S.prof;
  if(f.k==='qty'){const o=f.fd,v=qcalc(),U=units(o),ed=!!f.eid,k=uk(f.un);
-  return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><div class=shh><div><h2>${esc(o.n)}</h2><small>${o.b?esc(o.b)+' · ':''}${fmt(o.k)} kcal / 100 g</small></div><button class="star${S.foods[o.id]&&S.foods[o.id].fav?' on':''}" data-a=qfav aria-label=Favori>${SI('star',24)}</button></div>
+  return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><div class=shh><div><h2>${esc(o.n)}</h2><small>${o.b?esc(o.b)+' · ':''}${fmt(o.k)} kcal / 100 g${o.code?` · code ${esc(o.code)}`:''}</small></div><button class="star${S.foods[o.id]&&S.foods[o.id].fav?' on':''}" data-a=qfav aria-label=Favori>${SI('star',24)}</button></div>
   <div class=qk><b class=fc id=qk>${fmt(v.k)}</b><small>kcal</small></div>
   <div class=qm id=qm>${qm(v)}</div>
   <p class=lbl>Quantité</p><div class=qbox>
@@ -635,7 +635,7 @@ function formHtml(){const f=F,P=S.prof;
  if(f.k==='scan')return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>Scanner un code-barres</h2>
   <div class=cam><video id=cam playsinline muted></video><p id=cmsg>${esc(f.msg||'Place le code-barres dans le cadre')}</p></div>
   ${f.nf?`<p class=mut>Le produit ${esc(f.nf)} n’est pas dans Open Food Facts.</p><button class=big data-a=fcf data-code="${esc(f.nf)}">Le créer moi-même</button>`:''}
-  <p class=lbl>Ou tape le code</p><div class=inl><input id=code inputmode=numeric placeholder="3017620422003" autocomplete=off><button class="ib ac" data-a=codeok style="width:48px;height:48px">${SI('search',20)}</button></div></div></div>`;
+  <p class=lbl>${f.nf?'Corrige le code si besoin':'Ou tape le code'}</p><div class=inl><input id=code inputmode=numeric placeholder="3017620422003" value="${esc(f.nf||'')}" autocomplete=off><button class="ib ac" data-a=codeok style="width:48px;height:48px">${SI('search',20)}</button></div></div></div>`;
  if(f.k==='cfg')return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>Réglages</h2>
  <p class=lbl>Synchronisation GitHub</p><div class=ocard>
   <div class="orow hint">Garde tes données dans un fichier d’un dépôt GitHub <b>privé</b> pour les retrouver sur tous tes appareils (jeton fine-grained « Contents : Read and write » sur ce dépôt).</div>
@@ -703,17 +703,27 @@ function entryFood(e){const o=food(e.fid);if(o)return o;return{id:e.fid||'x:'+e.
 
 /* ============ Scan du code-barres ============ */
 let SCN=null;
-async function startScan(){stopScan();const me={};SCN=me;const v=$('#cam'),msg=m=>{const p=$('#cmsg');if(p)p.textContent=m};
+/* Codes-barres EAN / UPC : on ne garde que les chiffres, UPC-A (12) devient EAN-13, et le chiffre de contrôle doit être juste */
+function gtin(t){let c=String(t||'').replace(/\D/g,'');if(c.length===12)c='0'+c;if(c.length!==8&&c.length!==13)return null;
+ const d=c.split('').map(Number),ck=d.pop();let x=0;d.reverse().forEach((n,i)=>x+=n*(i%2?1:3));return(10-x%10)%10===ck?c:null}
+/* Scan : on lit seulement la zone du cadre (image recadrée sur un canvas), et un code n'est accepté que s'il est lu 2 fois à l'identique */
+async function startScan(){stopScan();const me={n:{}};SCN=me;const v=$('#cam'),msg=m=>{const p=$('#cmsg');if(p)p.textContent=m};
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return msg('Caméra indisponible : tape le code ci-dessous.');
- try{if('BarcodeDetector' in window&&(await BarcodeDetector.getSupportedFormats()).includes('ean_13')){
-   me.st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});if(SCN!==me)return me.st.getTracks().forEach(t=>t.stop());
-   v.srcObject=me.st;await v.play();const bd=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
-   const loop=async()=>{if(SCN!==me)return;try{const r=await bd.detect(v);if(r[0])return found(r[0].rawValue)}catch{}setTimeout(loop,200)};loop()}
-  else{if(!window.ZXing)await new Promise((ok,ko)=>{const s=document.createElement('script');s.src='zxing.min.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s)});if(SCN!==me)return;
-   const Z=window.ZXing,hints=new Map();hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E]);
-   me.rd=new Z.BrowserMultiFormatReader(hints,250);await me.rd.decodeFromConstraints({video:{facingMode:'environment'}},v,r=>{if(r&&SCN===me)found(r.getText())})}}
+ try{me.st=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});if(SCN!==me)return me.st.getTracks().forEach(t=>t.stop());
+  v.srcObject=me.st;await v.play();
+  try{const tr=me.st.getVideoTracks()[0],cp=tr.getCapabilities?tr.getCapabilities():{};if((cp.focusMode||[]).includes('continuous'))await tr.applyConstraints({advanced:[{focusMode:'continuous'}]})}catch{}
+  let dec;
+  if('BarcodeDetector' in window&&(await BarcodeDetector.getSupportedFormats()).includes('ean_13')){const bd=new BarcodeDetector({formats:['ean_13','ean_8','upc_a']});dec=async c=>{const r=await bd.detect(c);return r[0]&&r[0].rawValue}}
+  else{if(!window.ZXing)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='zxing.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});if(SCN!==me)return;
+   const Z=window.ZXing,h=new Map(),rd=new Z.MultiFormatReader();h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A]);h.set(Z.DecodeHintType.TRY_HARDER,true);rd.setHints(h);
+   dec=c=>{try{return rd.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(c)))).getText()}catch{return null}}}
+  const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+  const loop=async()=>{if(SCN!==me)return;const W=v.videoWidth,H=v.videoHeight;
+   if(W&&H){const sw=W*.84,sh=H*.5,k=Math.min(1,1200/sw);cv.width=Math.round(sw*k);cv.height=Math.round(sh*k);cx.drawImage(v,W*.08,H*.25,sw,sh,0,0,cv.width,cv.height);
+    let t=null;try{t=await dec(cv)}catch{}const c=gtin(t);if(c){me.n[c]=(me.n[c]||0)+1;if(me.n[c]>=2)return found(c);msg('Lecture de '+c+'…')}}
+   setTimeout(loop,90)};loop()}
  catch(e){msg(e&&e.name==='NotAllowedError'?'Accès à la caméra refusé : autorise-le dans les réglages, ou tape le code.':'Caméra indisponible : tape le code ci-dessous.')}}
-function stopScan(){const s=SCN;SCN=null;if(!s)return;try{s.rd&&s.rd.reset()}catch{}if(s.st)s.st.getTracks().forEach(t=>t.stop())}
+function stopScan(){const s=SCN;SCN=null;if(!s)return;if(s.st)s.st.getTracks().forEach(t=>t.stop())}
 async function found(code){stopScan();if(navigator.vibrate)navigator.vibrate(60);const p=$('#cmsg');if(p)p.textContent='Recherche de '+code+'…';
  try{const o=await offCode(code);if(!F||F.k!=='scan')return;if(o)return openQty(o,ADDM);F=Object.assign({},F,{nf:code,msg:'Produit introuvable'});render()}
  catch(e){if(F&&F.k==='scan'){F=Object.assign({},F,{msg:'Erreur réseau, réessaie.'});render();startScan()}}}
@@ -771,7 +781,7 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='sub')return openSub(d.s);
  if(a==='cfg'){F={k:'cfg'};return render()}
  if(a==='scan')return openF({k:'scan'});
- if(a==='codeok'){const c=($('#code').value||'').replace(/\D/g,'');if(c.length<6)return;return found(c)}
+ if(a==='codeok'){const c=($('#code').value||'').replace(/\D/g,'');if(c.length<6)return;const g=gtin(c);if(!g&&(c.length===8||c.length>=12)){const p=$('#cmsg');if(p)p.textContent='Ce code semble mal recopié (chiffre de contrôle faux), vérifie-le.'}return found(g||c)}
  if(a==='sync'){setMsg('Synchronisation…');return sync(true)}
  if(a==='exp'){const u=URL.createObjectURL(new Blob([JSON.stringify(dataOut(),null,1)],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download='naafiri-'+TODAY()+'.json';l.click();return setTimeout(()=>URL.revokeObjectURL(u),2e3)}
  if(a==='imp')return $('#file').click()});
