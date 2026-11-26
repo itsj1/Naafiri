@@ -236,6 +236,8 @@ input:focus{border-color:var(--acc)}
 .nt div span:last-child{flex:none;font-variant-numeric:tabular-nums}
 .nt div.h span:last-child{color:var(--ink)}
 .dlk{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 14px;border-top:1px solid var(--line);color:var(--act);font-weight:700;font-size:14px}
+.dlk.qft{border:1px solid var(--line);background:var(--card);border-radius:16px;margin:0 0 10px}
+.dlk.qft svg{transition:transform .2s}.dlk.qft.op svg{transform:rotate(90deg)}
 .card .dlk{border-top:1px solid var(--line);margin:14px -16px -16px;width:calc(100% + 32px);border-radius:0 0 22px 22px}
 .del{display:block;margin:6px auto 0;color:var(--red);font-size:15px;padding:10px}
 .warn{color:var(--red);font-size:13px;margin:4px 4px 0}
@@ -649,9 +651,11 @@ function formHtml(){const f=F,P=S.prof;
 const qm=v=>[['Glucides','c','--cb'],['Protéines','p','--pr'],['Lipides','f','--fa']].map(([l,x,c])=>`<div><i style="background:var(${c})"></i><b>${f1(v[x])} g</b><small>${l}</small></div>`).join('');
 function goalsAuto(){const kc=S.prof.kc;S.prof.kc=0;const k=goals().k;S.prof.kc=kc;return k}
 function qgLab(v){const u=v.u;return u[0]==='g'?'grammes':u[0]==='ml'||u[0]==='l'?`${u[0]==='l'?'litres':'millilitres'} · soit ${fmt(v.q)} g (1 mL ≈ 1 g)`:u[0]==='kg'?`kilos · soit ${fmt(v.q)} g`:`× ${esc(plab(u[1]))} · soit ${fmt(v.q)} g`}
-function nutHtml(v){const o=F.fd,x=q=>v.q?q*v.q/100:0;if(F.full)return ntHtml(v,k=>{const n=nv(o,k);return n==null?null:x(n)})+`<button class=dlk style="border:0" data-a=qfull>Voir moins${SI('up',18)}</button>`;
+function nutHtml(v){const o=F.fd,x=q=>v.q?q*v.q/100:0;/* Le bouton pour déplier / replier reste toujours au même endroit, au-dessus du tableau ; seule sa flèche tourne */
+ const tg=`<button class="dlk qft${F.full?' op':''}" data-a=qfull>${F.full?'Afficher moins':'Tout le détail (vitamines, minéraux…)'}${SI('r',18)}</button>`;
+ if(F.full)return tg+ntHtml(v,k=>{const n=nv(o,k);return n==null?null:x(n)});
  const L=[['Calories',o.k,'kcal',0],['Glucides',o.c,'g',0],['dont sucres',nv(o,'sugars'),'g',1],['Lipides',o.f,'g',0],['dont saturés',nv(o,'saturated-fat'),'g',1],['Protéines',o.p,'g',0],['Fibres',nv(o,'fiber'),'g',0],['Sel',nv(o,'salt'),'g',0]];
- return`<div class=nut>${L.filter(r=>r[1]!=null).map(([l,val,u,sb])=>`<div${sb?' class=sb':''}><span>${l}</span>${sb?`<span>${f1(x(val))} ${u}</span>`:`<b>${u==='kcal'?fmt(x(val)):f1(x(val))} ${u}</b>`}</div>`).join('')}</div><button class=dlk style="border:0" data-a=qfull>Tout le détail (vitamines, minéraux…)${SI('r',18)}</button>`}
+ return tg+`<div class=nut>${L.filter(r=>r[1]!=null).map(([l,val,u,sb])=>`<div${sb?' class=sb':''}><span>${l}</span>${sb?`<span>${f1(x(val))} ${u}</span>`:`<b>${u==='kcal'?fmt(x(val)):f1(x(val))} ${u}</b>`}</div>`).join('')}</div>`}
 function qokLab(){const ms=F.ms;if(!ms.length)return'Choisis au moins un repas';if(F.eid)return ms.length>1?`Enregistrer (${ms.length} repas)`:'Enregistrer';return ms.length>1?`Ajouter à ${ms.length} repas`:'Ajouter au '+MN[ms[0]].toLowerCase()}
 function paintQty(){const v=qcalc();$('#qk').textContent=fmt(v.k);$('#qm').innerHTML=qm(v);$('#qg').innerHTML=qgLab(v);$('#qnut').innerHTML=nutHtml(v);$('#qnl').textContent='Valeurs nutritionnelles · '+fmt(v.q)+' g'}
 
