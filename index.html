@@ -201,14 +201,17 @@ input:focus{border-color:var(--acc)}
 .qm i{display:block;width:22px;height:4px;border-radius:9px;margin:0 auto 6px}
 .qbox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:12px 0 4px}
 /* Roulette (comme le sélecteur d'iOS) : liste à défilement aimanté, la valeur au centre est la valeur choisie */
-.whw{position:relative;height:200px;margin:0 12px}
+.whw{position:relative;height:200px;margin:0 12px;display:flex;gap:6px}
+.whw .wh{flex:1;min-width:0}
+.whw .wh.un{flex:1.7}
+.whw .wh.un button{font-size:16px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.whw .wh.un button.on{font-size:19px;color:var(--act)}
 .whb{position:absolute;left:0;right:0;top:80px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--acc) 14%,transparent)}
 .wh{position:relative;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
 .wh::-webkit-scrollbar{display:none}
 .wh:before,.wh:after{content:"";display:block;height:80px}
 .wh button{display:block;width:100%;height:40px;scroll-snap-align:center;text-align:center;font-size:19px;font-weight:600;color:var(--mut);transition:color .15s,font-size .15s}
 .wh button.on{color:var(--ink);font-size:26px;font-weight:800}
-.whu{position:absolute;top:80px;left:calc(50% + 44px);line-height:40px;font-weight:700;color:var(--act);pointer-events:none;max-width:calc(50% - 50px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qg{text-align:center;color:var(--mut);font-size:13px;margin:6px 0 2px}
 .qbox .chips{margin:8px 0;padding:0 12px}
 .qbox .chips.qv .chip{min-width:52px;text-align:center}
@@ -530,18 +533,23 @@ const chips=(f,L,v)=>`<div class=chips style="margin:6px -16px;padding:0 16px">$
 const fld=(l,k,v,u,im='decimal',ph='')=>`<label class="orow fld"><b>${l}</b><div class=inl><input data-fd=${k} inputmode=${im} value="${esc(v)}" placeholder="${esc(ph)}" autocomplete=off>${u?`<span class=u>${u}</span>`:''}</div></label>`;
 /* Unités : portions propres à l'aliment (p, p1, p2…, pk = paquet), puis g / kg / mL / L (1 mL compté comme 1 g) */
 const UB=[['g','g',1],['kg','kg',1000],['ml','mL',1],['l','L',1000]];
-const QV={p:[.5,1,2,3],g:[50,100,150,200,250],kg:[.25,.5,1],ml:[100,200,250,330,500],l:[.25,.5,1,1.5]};
 const WH=40;let WV=[];                          // hauteur d'une ligne de la roulette, valeurs affichées
 function whVals(k,cur){const L=[],a=(f,t,st)=>{for(let x=f;x<=t+1e-9;x+=st)L.push(Math.round(x*100)/100)};
  if(k==='p'){a(.25,3,.25);a(3.5,10,.5);a(11,30,1)}else if(k==='kg'||k==='l'){a(.05,3,.05);a(3.1,10,.1)}else{a(5,500,5);a(510,1000,10);a(1050,3000,50)}
  cur=Math.round(num(cur)*100)/100;if(cur>0&&!L.includes(cur)){L.push(cur);L.sort((x,y)=>x-y)}return L}
 const wf=x=>String(Math.round(x*100)/100).replace('.',',');
 function whHtml(){const k=uk(F.un),n=Math.round(num(F.nb)*100)/100;WV=whVals(k,n);return WV.map((x,i)=>`<button class="${x===n?'on':''}" data-a=whv data-i=${i}>${wf(x)}</button>`).join('')}
-const whUnit=()=>{const u=units(F.fd).find(x=>x[0]===F.un)||UB[0];return u[0][0]==='p'?plab(u[1]):u[1]};
-function whInit(){const w=$('#wh');if(!w)return;const i=WV.indexOf(Math.round(num(F.nb)*100)/100);w.scrollTop=Math.max(0,i)*WH}
+const whUHtml=()=>units(F.fd).map(([x,l,g],i)=>`<button class="${F.un===x?'on':''}" data-a=whu data-i=${i}>${x[0]==='p'?esc(plab(l)):l}</button>`).join('');
+function whInit(only){const w=$('#wh'),u=$('#whu');if(w)w.scrollTop=Math.max(0,WV.indexOf(Math.round(num(F.nb)*100)/100))*WH;if(u&&!only)u.scrollTop=Math.max(0,units(F.fd).findIndex(x=>x[0]===F.un))*WH}
+/* Changement d'unité : on garde le même poids (une portion → 1 portion), puis on reconstruit la roulette des nombres */
+function setUnit(un){const U=units(F.fd),o=U.find(x=>x[0]===F.un),n=U.find(x=>x[0]===un);if(!n||o===n)return;
+ if(o){const g=num(F.nb)*o[2];F.nb=n[0][0]==='p'?1:n[0]==='g'||n[0]==='ml'?(Math.max(5,Math.round(g/5)*5)):Math.max(.05,Math.round(g/n[2]*20)/20)}else F.nb=n[0][0]==='p'?1:100;
+ F.un=un;const w=$('#wh');if(w){w.innerHTML=whHtml();whInit(1)}paintQty()}
 function whGo(v,smooth){const w=$('#wh');if(!w)return;v=Math.round(v*100)/100;if(!WV.includes(v)){F.nb=v;w.innerHTML=whHtml();return whInit()}w.scrollTo({top:WV.indexOf(v)*WH,behavior:smooth?'smooth':'auto'})}
 /* Quand la roulette tourne : la valeur au centre devient la quantité */
-document.addEventListener('scroll',e=>{const w=e.target;if(!w||w.id!=='wh'||!F||F.k!=='qty')return;const i=Math.max(0,Math.min(WV.length-1,Math.round(w.scrollTop/WH))),v=WV[i];
+document.addEventListener('scroll',e=>{const w=e.target;if(!w||!F||F.k!=='qty')return;
+ if(w.id==='whu'){const U=units(F.fd),i=Math.max(0,Math.min(U.length-1,Math.round(w.scrollTop/WH)));if(U[i][0]===F.un)return;w.querySelectorAll('.on').forEach(b=>b.classList.remove('on'));if(w.children[i])w.children[i].classList.add('on');return setUnit(U[i][0])}
+ if(w.id!=='wh')return;const i=Math.max(0,Math.min(WV.length-1,Math.round(w.scrollTop/WH))),v=WV[i];
  if(v===Math.round(num(F.nb)*100)/100)return;F.nb=v;w.querySelectorAll('.on').forEach(b=>b.classList.remove('on'));if(w.children[i])w.children[i].classList.add('on');paintQty()},true);
 const uk=u=>u[0]==='p'?'p':u;
 function units(o){const P=[];if(o.sv)P.push(['p',o.svn||'1 portion',o.sv]);(o.ps||[]).forEach((x,i)=>P.push(['p'+(i+1),x[0],x[1]]));if(o.pk&&o.pk!==o.sv)P.push(['pk','1 paquet',o.pk]);return P.concat(UB)}
@@ -553,10 +561,9 @@ function formHtml(){const f=F,P=S.prof;
   <div class=qk><b class=fc id=qk>${fmt(v.k)}</b><small>kcal</small></div>
   <div class=qm id=qm>${qm(v)}</div>
   <p class=lbl>Quantité</p><div class=qbox>
-   <div class=whw><div class=whb></div><div class=wh id=wh>${whHtml()}</div><span class=whu>${esc(whUnit())}</span></div>
+   <div class=whw><div class=whb></div><div class=wh id=wh>${whHtml()}</div><div class="wh un" id=whu>${whUHtml()}</div></div>
    <p class=qg id=qg>${qgLab(v)}</p>
-   <div class="chips wr">${U.map(([x,l,g])=>`<button class="chip${f.un===x?' on':''}" data-a=qun data-u=${x}>${x[0]==='p'?`${esc(plab(l))} · ${fmt(g)} g`:l}</button>`).join('')}</div>
-   <div class="chips qv" id=qv>${qvHtml()}</div></div>
+</div>
   <p class=lbl>${ed?'Repas':'Ajouter à'}</p><div class=mg>${MEALS.map(([m,l])=>`<button class="${f.ms.includes(m)?'on':''}" data-a=qml data-m=${m}><i>${SI('check',14,3)}</i>${l}</button>`).join('')}</div>
   <button class=big data-a=qok id=qok>${qokLab()}</button>
   <p class=lbl id=qnl>Valeurs nutritionnelles · ${fmt(v.q)} g</p><div class=nut id=qnut>${nutHtml(v)}</div>
@@ -602,11 +609,10 @@ function formHtml(){const f=F,P=S.prof;
 const qm=v=>[['Glucides','c','--cb'],['Protéines','p','--pr'],['Lipides','f','--fa']].map(([l,x,c])=>`<div><i style="background:var(${c})"></i><b>${f1(v[x])} g</b><small>${l}</small></div>`).join('');
 function goalsAuto(){const kc=S.prof.kc;S.prof.kc=0;const k=goals().k;S.prof.kc=kc;return k}
 function qgLab(v){const u=v.u;return u[0]==='g'?'grammes':u[0]==='ml'||u[0]==='l'?`${u[0]==='l'?'litres':'millilitres'} · soit ${fmt(v.q)} g (1 mL ≈ 1 g)`:u[0]==='kg'?`kilos · soit ${fmt(v.q)} g`:`× ${esc(plab(u[1]))} · soit ${fmt(v.q)} g`}
-function qvHtml(){const k=uk(F.un),n=num(F.nb);return QV[k].map(x=>`<button class="chip${n===x?' on':''}" data-a=qv data-v=${x}>${x===.5&&k==='p'?'½':String(x).replace('.',',')}${k==='p'?'':' '+(UB.find(u=>u[0]===k)||[0,''])[1]}</button>`).join('')}
 function nutHtml(v){const o=F.fd,x=q=>v.q?q*v.q/100:0,L=[['Calories',o.k,'kcal',0],['Glucides',o.c,'g',0],['dont sucres',o.su,'g',1],['Lipides',o.f,'g',0],['dont saturés',o.sf,'g',1],['Protéines',o.p,'g',0],['Fibres',o.fi,'g',0],['Sel',o.sa,'g',0]];
  return L.filter(r=>r[1]!=null).map(([l,val,u,sb])=>`<div${sb?' class=sb':''}><span>${l}</span>${sb?`<span>${f1(x(val))} ${u}</span>`:`<b>${u==='kcal'?fmt(x(val)):f1(x(val))} ${u}</b>`}</div>`).join('')}
 function qokLab(){const ms=F.ms;if(!ms.length)return'Choisis au moins un repas';if(F.eid)return ms.length>1?`Enregistrer (${ms.length} repas)`:'Enregistrer';return ms.length>1?`Ajouter à ${ms.length} repas`:'Ajouter au '+MN[ms[0]].toLowerCase()}
-function paintQty(){const v=qcalc();$('#qk').textContent=fmt(v.k);$('#qm').innerHTML=qm(v);$('#qg').innerHTML=qgLab(v);$('#qv').innerHTML=qvHtml();$('#qnut').innerHTML=nutHtml(v);$('#qnl').textContent='Valeurs nutritionnelles · '+fmt(v.q)+' g'}
+function paintQty(){const v=qcalc();$('#qk').textContent=fmt(v.k);$('#qm').innerHTML=qm(v);$('#qg').innerHTML=qgLab(v);$('#qnut').innerHTML=nutHtml(v);$('#qnl').textContent='Valeurs nutritionnelles · '+fmt(v.q)+' g'}
 
 /* ============ Rendu ============ */
 function render(){const a=$('#app'),k=TAB+'|'+(SUBV||''),y=a.scrollTop,sh=$('.sheet'),sy=sh?sh.scrollTop:0;
@@ -684,8 +690,7 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='fd'){const o=food(d.id);if(o)openQty(o,ADDM);return}
  if(a==='qadd'){const o=food(d.id);if(!o)return;const dq=defQ(o);addEntry(o,ADDM,dq.un,dq.nb);paintRes();return updBadge()}
  if(a==='ent'){const x=dayR(CUR).e.find(y=>y.id===d.id);if(!x)return;if(x.qa){F={k:'qa',eid:x.id,d:{m:x.m,n:x.n==='Ajout rapide'?'':x.n,k:String(x.k).replace('.',','),c:x.c||'',p:x.p||'',f:x.f||''}};return render()}return openQty(entryFood(x),x.m,x)}
- if(a==='qun'){const U=units(F.fd),o=U.find(x=>x[0]===F.un),n=U.find(x=>x[0]===d.u);if(o&&n&&o!==n){const g=num(F.nb)*o[2];F.nb=n[0][0]==='p'?1:n[0]==='g'||n[0]==='ml'?r0(g):Math.round(g/n[2]*100)/100}F.un=d.u;return render()}
- if(a==='qv')return whGo(+d.v,1);
+ if(a==='whu'){const u=$('#whu');if(u)u.scrollTo({top:+d.i*WH,behavior:'smooth'});return}
  if(a==='whv')return whGo(WV[+d.i],1);
  if(a==='qml'){const m=d.m,ms=F.ms;F.ms=ms.includes(m)?ms.filter(x=>x!==m):MEALS.map(x=>x[0]).filter(x=>x===m||ms.includes(x));return render()}
  if(a==='fset'){const v=d.v,f=d.f;if(F.k==='qa'){F.d.m=v}else F.d[f]=/^[\d.]+$/.test(v)?+v:v;return render()}
