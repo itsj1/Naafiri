@@ -26,8 +26,8 @@ App personnelle (un seul utilisateur) pour **compter les calories**, inspirée d
 
 - `localStorage['naafiri-v1']` → `S = { days, foods, wt, prof, del, cfg, sha }`.
 - `days[AAAA-MM-JJ] = { e:[entrées], u }` (un ancien champ `w`, l’eau retirée, peut traîner : l’ignorer).
-  - Entrée : `{ id, fid, n, b, m (b/l/d/s), q (grammes), un ('g' | 'p' portion), nb (nombre saisi), svn, k, p, c, f (pour 100 g, figés au moment de l'ajout), qa? (ajout rapide) }`.
-- `foods[id]` : aliments utilisés, favoris et perso. `id` = `off:<code-barres>`, `g:<clé>` (aliments de base `GEN`) ou `my:<uid>`. Champs `n, b, k, p, c, f` (pour 100 g), `sv`/`svn` (portion), `su, sf, fi, sa` (sucres, saturés, fibres, sel), `img`, `ns` (Nutri-Score), `last` (récents), `fav`, `my`, `u`.
+  - Entrée : `{ id, fid, n, b, m (b/l/d/s), q (grammes), un (unité : 'g', 'kg', 'ml', 'l', ou portion 'p' / 'p1', 'p2'… / 'pk' paquet), nb (nombre saisi dans cette unité), svn (nom de la portion), k, p, c, f (pour 100 g, figés au moment de l'ajout), qa? (ajout rapide) }`.
+- `foods[id]` : aliments utilisés, favoris et perso. `id` = `off:<code-barres>`, `g:<clé>` (aliments de base `GEN`) ou `my:<uid>`. Champs `n, b, k, p, c, f` (pour 100 g), `sv`/`svn` (portion principale), `ps` (portions en plus `[[nom, g]]`, table `GENP` pour les aliments de base), `pk` (poids du paquet, Open Food Facts), `su, sf, fi, sa` (sucres, saturés, fibres, sel), `img`, `ns` (Nutri-Score), `last` (récents), `fav`, `my`, `u`.
 - `GEN` : table intégrée d'aliments de base (valeurs moyennes). **Ne jamais changer une clé existante** (elle sert d'id), ajouter à la fin.
 - `wt[AAAA-MM-JJ] = { kg, u }` ; `prof = { sx, age, h, kg, gw (poids cible), act, obj, pace, kc (0 = auto), mac:{c,p,f} en %, u }` (ancien `wat` ignoré).
 - Objectif calorique : Mifflin-St Jeor × activité, ± `pace` × 7 700 / 7 kcal par jour, minimum 1 200 (F) / 1 500 (H), arrondi à 10. Répartition par repas : 25 / 35 / 30 / 10 %.
@@ -46,7 +46,7 @@ Fichier `naafiri-data.json` dans un **dépôt GitHub privé** via l'API Contents
 
 - **Journal** : flèches + bandeau de la semaine (point violet = jour noté, rouge = objectif dépassé), bulle avec anneau des calories restantes et barres glucides / protéines / lipides (glisser à gauche / droite = jour suivant / précédent), quatre repas avec bouton + et flèche pour déplier / replier leurs aliments (repliés par défaut). Pas de suivi de l’eau (retiré à la demande de l’utilisateur).
 - **Ajouter** : choix du repas, rond en haut à droite avec le nombre d’aliments de ce repas (ouvre la page `meal` : liste, glisser pour supprimer), recherche (mes aliments → aliments de base → Open Food Facts), bouton scan, bulles Récents / Favoris / Mes aliments de même largeur, « + » pour ajouter directement une portion (coche violette si l’aliment est déjà dans le repas choisi), Ajout rapide, Créer un aliment.
-- **Feuille quantité** : kcal et macros en direct, portion ou grammes, repas, favori (étoile), détail nutritionnel, Supprimer en modification.
+- **Feuille quantité** : kcal, macros et tableau nutritionnel mis à jour en direct (`paintQty()`) ; nombre avec − / +, unités (portions de l’aliment, puis g / kg / mL / L, 1 mL compté comme 1 g, `units()`), raccourcis (`QV` : ½ · 1 · 2 · 3 portions, 50 → 250 g…) ; plusieurs repas cochables à la fois (`F.ms`, ajout simultané ; en modification l’entrée garde son id dans son repas s’il reste coché) ; favori (étoile), Supprimer en modification.
 - **Progrès** : poids actuel, évolution, série de jours ; courbe du poids avec objectif ; calories des 7 derniers jours ; macros moyennes.
 - **Roue dentée en haut à droite** (Journal, Progrès, Profil, `gear()`) : feuille Réglages avec synchro GitHub, export / import JSON et crédits.
 - **Profil** : profil, objectifs, mes aliments.
