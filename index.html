@@ -641,8 +641,8 @@ function toast(msg,undo){const b=tsBox(),t=document.createElement('div');t.class
 
 /* ============ Journal : ajout / modification ============ */
 function remember(o,un,nb){const s=S.foods[o.id]||(S.foods[o.id]=Object.assign({},o));s.last=Date.now();if(un&&nb>0)s.lq={un,nb};touch(s)}
-/* Quantité par défaut : la dernière utilisée pour cet aliment, sinon 1 portion, sinon 100 g */
-function defQ(o){const s=S.foods[o.id],l=s&&s.lq;if(l&&units(o).some(u=>u[0]===l.un))return l;return o.sv?{un:'p',nb:1}:{un:'g',nb:100}}
+/* Quantité par défaut : la dernière utilisée pour cet aliment, sinon en grammes (poids d'une portion, ou 100 g) */
+function defQ(o){const s=S.foods[o.id],l=s&&s.lq;if(l&&units(o).some(u=>u[0]===l.un))return l;return{un:'g',nb:o.sv?Math.max(5,Math.round(o.sv)):100}}
 function openQty(o,m,e){const dq=defQ(o);let un=e?e.un||'g':dq.un,nb=e?e.nb||e.q:dq.nb;if(!units(o).some(u=>u[0]===un)){un='g';nb=e?e.q:100}F={k:'qty',fd:o,ms:[m],eid:e?e.id:null,un,nb};render()}
 /* Ajoute l'aliment à un ou plusieurs repas ; en modification, l'entrée garde son id dans le premier repas choisi (le sien s'il est coché) */
 function addEntry(o,ms,un,nb,eid){if(!Array.isArray(ms))ms=[ms];const u=units(o).find(x=>x[0]===un)||UB[0],q=num(nb)*u[2];if(!(q>0)||!ms.length)return false;
