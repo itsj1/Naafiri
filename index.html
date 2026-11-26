@@ -10,7 +10,9 @@
 <title>Naafiri</title>
 <style>
 :root{--bg:#f6f4f8;--card:#fff;--ink:#120e16;--mut:#6f6a76;--line:#e7e3ec;--acc:#a43cf0;--act:#7d22c9;--tint:#f0e2fd;--on:#fff;--red:#e5484d;--ok:#16a34a;--cb:#f5a524;--pr:#e2549b;--fa:#3b9df5;color-scheme:light}
-@media(prefers-color-scheme:dark){:root{--bg:#241e2b;--card:#302839;--ink:#f5f1f8;--mut:#b5abbe;--line:#463c52;--acc:#b65cff;--act:#d6a4ff;--tint:#45305f;--on:#fff;--red:#f27272;--ok:#3ad981;--cb:#ffb547;--pr:#f06aac;--fa:#5bb0ff;color-scheme:dark}}
+/* Thème : auto (selon le téléphone), clair ou sombre forcé (data-theme sur <html>, comme Muscu) */
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#241e2b;--card:#302839;--ink:#f5f1f8;--mut:#b5abbe;--line:#463c52;--acc:#b65cff;--act:#d6a4ff;--tint:#45305f;--on:#fff;--red:#f27272;--ok:#3ad981;--cb:#ffb547;--pr:#f06aac;--fa:#5bb0ff;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#241e2b;--card:#302839;--ink:#f5f1f8;--mut:#b5abbe;--line:#463c52;--acc:#b65cff;--act:#d6a4ff;--tint:#45305f;--on:#fff;--red:#f27272;--ok:#3ad981;--cb:#ffb547;--pr:#f06aac;--fa:#5bb0ff;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 /* La page ne défile pas : c'est #app qui défile (le rebond d'iOS ne bouge jamais la barre d'onglets) */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
@@ -188,6 +190,12 @@ input:focus{border-color:var(--acc)}
 .orow.hint{font-size:14px;color:var(--mut);display:block}
 .orow.go{color:var(--act);font-weight:700}
 .cred{font-size:12px;color:var(--mut);margin:20px 4px 0}
+.seg2{display:flex;gap:4px;padding:5px;background:var(--bg);border:1px solid var(--line);border-radius:18px}
+.seg2 button{flex:1;padding:14px 0;border-radius:13px;background:none;color:var(--mut);font:600 15px ui-monospace,Menlo,monospace;letter-spacing:.12em}
+.seg2 button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.accs{display:flex;justify-content:space-between;gap:6px;padding:12px 14px;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:18px}
+.accs button{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--c);box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+.accs button.on{box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--c)}
 .opl{font:12px ui-monospace,Menlo,monospace;letter-spacing:.14em;color:var(--mut);margin:22px 4px 8px}
 .soft{background:color-mix(in srgb,var(--ink) 4%,var(--card));border:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-weight:600}
 .mi{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:12px 16px;margin:10px 0}
@@ -712,6 +720,8 @@ function formHtml(){const f=F,P=S.prof;
  if(f.k==='cfg'){const c=S.cfg,fl=(k,l,ph,t)=>`<div class="orow fld"><b>${l}</b><input class=soft data-cfg=${k} placeholder="${esc(ph)}" value="${esc(c[k]||'')}" ${t||''} autocomplete=off autocapitalize=off autocorrect=off spellcheck=false></div>`,
   MI=(a,i,t,sub,x)=>`<button class="mi${x?' gr':''}" data-a=${a}><i>${SI(i,24)}</i><span><b>${t}</b><small${a==='sync'?' id=msg':''}>${sub}</small></span></button>`;
   return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>Réglages</h2>
+  <div class=opl>APPARENCE</div><div class=seg2>${[['auto','AUTO'],['light','CLAIR'],['dark','SOMBRE']].map(([k,l])=>`<button class="${(c.theme||'auto')===k?'on':''}" data-a=thm data-v=${k}>${l}</button>`).join('')}</div>
+  <div class=accs>${ACCS.map(a=>`<button class="${(c.acc||'violet')===a[0]?'on':''}" style="--c:${a[2]}" data-a=acc data-v=${a[0]} aria-label="${a[1]}">${(c.acc||'violet')===a[0]?SI('check',20,3):''}</button>`).join('')}</div>
   <div class=opl>SYNCHRONISATION GITHUB</div><div class=ocard>${fl('repo','Dépôt privé','utilisateur/depot-prive')}${fl('path','Fichier','naafiri-data.json')}${fl('token','Jeton d’accès','','type=password')}</div>
   ${MI('sync','sync','Synchroniser maintenant',esc(MSG)||'Envoie et récupère tes données.',1)}
   <div class=opl>BASE USDA (FACULTATIF)</div><div class=ocard>${fl('usda','Clé API USDA','Laisse vide pour ne pas utiliser l’USDA','type=password')}</div>
@@ -816,6 +826,8 @@ document.addEventListener('click',e=>{if(Date.now()-NOCL<400){e.preventDefault()
  if(a==='fd'){const o=food(d.id);if(o)openQty(o,ADDM);return}
  if(a==='qadd'){const o=food(d.id);if(!o)return;const dq=defQ(o);addEntry(o,ADDM,dq.un,dq.nb);paintRes();return updBadge()}
  if(a==='ent'){const x=dayR(CUR).e.find(y=>y.id===d.id);if(!x)return;if(x.qa){F={k:'qa',eid:x.id,d:{m:x.m,n:x.n==='Ajout rapide'?'':x.n,k:String(x.k).replace('.',','),c:x.c||'',p:x.p||'',f:x.f||''}};return render()}return openQty(entryFood(x),x.m,x)}
+ if(a==='thm'){S.cfg.theme=d.v;persist();applyTheme();return render()}
+ if(a==='acc'){S.cfg.acc=d.v;persist();applyTheme();return render()}
  if(a==='calm'){const[y,m]=CALM.split('-').map(Number),x=new Date(y,m-1+(+d.n),1);CALM=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');return render()}
  if(a==='cday'){CUR=d.d;TAB='jour';return render()}
  if(a==='cqmore'){CQX+=30;return paintRes()}
@@ -933,6 +945,17 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 let LT=TODAY();             // pour revenir sur « aujourd’hui » quand on rouvre l’appli le lendemain
 
 /* Démarrage */
+/* Couleurs principales : [clé, nom, clair (acc, act, tint), sombre (acc, act, tint)] */
+const ACCS=[['violet','Violet','#a43cf0','#7d22c9','#f0e2fd','#b65cff','#d6a4ff','#45305f'],['rose','Rose','#e0408a','#b0215f','#fbe0ec','#f06aac','#ffa6cf','#5a2742'],
+ ['bleu','Bleu','#2f7bf5','#1d5ad0','#dde9fd','#5b9cff','#9cc3ff','#233a5e'],['vert','Vert','#16a34a','#0f7a37','#d9f3e1','#34d27b','#86e8b1','#1f4a33'],
+ ['orange','Orange','#f07a1a','#b8530a','#fde8d6','#ff9a45','#ffc08a','#55361d'],['turquoise','Turquoise','#0ea5b7','#0b7c8a','#d5f3f6','#2cc6d6','#8be4ec','#1b4a50']];
+function applyTheme(){const t=S.cfg.theme||'auto',r=document.documentElement,a=ACCS.find(x=>x[0]===S.cfg.acc)||ACCS[0];
+ if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);
+ let st=$('#accst');if(!st){st=document.createElement('style');st.id='accst';document.head.appendChild(st)}
+ const L=`--acc:${a[2]};--act:${a[3]};--tint:${a[4]}`,D=`--acc:${a[5]};--act:${a[6]};--tint:${a[7]}`;
+ st.textContent=`:root{${L}}@media(prefers-color-scheme:dark){:root:not([data-theme=light]){${D}}}:root[data-theme=dark]{${D}}`;
+ document.querySelectorAll('meta[name=theme-color]').forEach(m=>{const dk=/dark/.test(m.media);m.setAttribute('content',t==='light'?'#f6f4f8':t==='dark'?'#241e2b':dk?'#241e2b':'#f6f4f8')})}
+applyTheme();
 history.replaceState({},'');
 render();sync();
 </script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
