@@ -3,16 +3,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Naafiri">
-<meta name="theme-color" content="#f6f4f8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#241e2b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111213" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Naafiri</title>
 <style>
-:root{--bg:#f6f4f8;--card:#fff;--ink:#120e16;--mut:#6f6a76;--line:#e7e3ec;--acc:#a43cf0;--act:#7d22c9;--tint:#f0e2fd;--on:#fff;--red:#e5484d;--ok:#16a34a;--cb:#f5a524;--pr:#e2549b;--fa:#3b9df5;color-scheme:light}
+:root{--bg:#f5f5f2;--card:#fff;--ink:#0b0b0a;--mut:#6f6f6b;--line:#e6e6e2;--acc:#a43cf0;--act:#7d22c9;--tint:#f0e2fd;--on:#fff;--red:#e5484d;--ok:#16a34a;--cb:#f5a524;--pr:#e2549b;--fa:#3b9df5;color-scheme:light}
 /* Thème : auto (selon le téléphone), clair ou sombre forcé (data-theme sur <html>, comme Muscu) */
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#241e2b;--card:#302839;--ink:#f5f1f8;--mut:#b5abbe;--line:#463c52;--acc:#b65cff;--act:#d6a4ff;--tint:#45305f;--on:#fff;--red:#f27272;--ok:#3ad981;--cb:#ffb547;--pr:#f06aac;--fa:#5bb0ff;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#241e2b;--card:#302839;--ink:#f5f1f8;--mut:#b5abbe;--line:#463c52;--acc:#b65cff;--act:#d6a4ff;--tint:#45305f;--on:#fff;--red:#f27272;--ok:#3ad981;--cb:#ffb547;--pr:#f06aac;--fa:#5bb0ff;color-scheme:dark}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111213;--card:#1c1d1f;--ink:#f4f4f0;--mut:#9a9ca0;--line:#2f3134;--acc:#b65cff;--act:#d6a4ff;--tint:#2c2238;--on:#fff;--red:#f27272;--ok:#3ad981;--cb:#ffb547;--pr:#f06aac;--fa:#5bb0ff;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#111213;--card:#1c1d1f;--ink:#f4f4f0;--mut:#9a9ca0;--line:#2f3134;--acc:#b65cff;--act:#d6a4ff;--tint:#2c2238;--on:#fff;--red:#f27272;--ok:#3ad981;--cb:#ffb547;--pr:#f06aac;--fa:#5bb0ff;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 /* La page ne défile pas : c'est #app qui défile (le rebond d'iOS ne bouge jamais la barre d'onglets) */
@@ -55,7 +55,7 @@ input:focus{border-color:var(--acc)}
 .wk i.lg{background:var(--acc)}.wk i.ov{background:var(--red)}
 
 /* Résumé du jour */
-.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px;margin:12px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
 .sum{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .sum .sd{flex:1;text-align:center}
 .sum .sd b{display:block;font-size:22px}
@@ -77,9 +77,9 @@ input:focus{border-color:var(--acc)}
 .onb svg{flex:none}
 
 /* Repas */
-.ml{background:var(--card);border:1px solid var(--line);border-radius:22px;margin:10px 0;overflow:hidden}
+.ml{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:10px 0;overflow:hidden}
 .mh{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px}
-.mh .mi0{flex:none;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--tint);color:var(--act)}
+.mh .mi0{flex:none;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
 .mh .tx{flex:1;min-width:0}
 .mh .tx b{display:block;font-size:17px}
 .mh .tx small{color:var(--mut);font-size:13px}
@@ -98,11 +98,11 @@ input:focus{border-color:var(--acc)}
 #sumc.inR{animation:sinR .26s cubic-bezier(.3,.7,.2,1)}#sumc.inL{animation:sinL .26s cubic-bezier(.3,.7,.2,1)}
 @keyframes sinR{from{transform:translateX(40%);opacity:0}}@keyframes sinL{from{transform:translateX(-40%);opacity:0}}
 /* Compteur d'aliments du repas (page Ajouter) */
-.cnt{flex:none;min-width:40px;height:40px;padding:0 10px;border-radius:999px;background:var(--acc);color:var(--on);font-weight:800;font-size:16px;display:grid;place-items:center;box-shadow:0 3px 10px color-mix(in srgb,var(--acc) 40%,transparent)}
+.cnt{flex:none;min-width:40px;height:40px;padding:0 10px;border-radius:999px;background:var(--acc);color:var(--on);font-weight:800;font-size:16px;display:grid;place-items:center}
 .cnt.z{background:var(--card);color:var(--mut);border:1px solid var(--line);box-shadow:none}
 .cnt.pop{animation:cpop .35s cubic-bezier(.3,1.6,.5,1)}
 @keyframes cpop{40%{transform:scale(1.3)}}
-.pl{flex:none;width:40px;height:40px;border-radius:50%;background:var(--acc);color:var(--on);display:grid;place-items:center;box-shadow:0 3px 10px color-mix(in srgb,var(--acc) 40%,transparent)}
+.pl{flex:none;width:36px;height:36px;border-radius:50%;background:var(--tint);color:var(--act);display:grid;place-items:center}
 .pl:active{transform:scale(.92)}
 .er{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 14px;border-top:1px solid var(--line)}
 .er .tx{flex:1;min-width:0}
@@ -142,7 +142,7 @@ input:focus{border-color:var(--acc)}
 .tpi .kc{flex:none;font-size:14px;font-weight:700}
 .tpi .d{flex:none;color:var(--red);width:32px;height:32px;display:grid;place-items:center;border-radius:50%}
 .tpn{font:700 20px "Avenir Next","Trebuchet MS",system-ui,sans-serif}
-.fl{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:8px 0}
+.fl{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:8px 0}
 .fr{display:flex;align-items:center;gap:12px;padding:10px 10px 10px 12px;border-top:1px solid var(--line)}
 .fr:first-child{border-top:0}
 .fr .fo{flex:1;min-width:0;display:flex;align-items:center;gap:12px;text-align:left}
@@ -166,6 +166,17 @@ input:focus{border-color:var(--acc)}
 
 /* Progrès */
 .st3{display:flex;gap:8px}
+/* Profil : carte d'identité, objectif du jour, liste avec icônes */
+.phd{display:flex;align-items:center;gap:14px}.pav{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--tint);color:var(--act)}
+.pid{flex:1;min-width:0}.pid b{display:block;font-size:18px}.pid small{color:var(--mut);font-size:13px}
+.pgl{font:11px ui-monospace,Menlo,monospace;letter-spacing:.14em;color:var(--mut)}
+.pgk{display:flex;align-items:baseline;gap:6px;margin:4px 0 12px}.pgk b{font-size:40px;line-height:1}.pgk span{color:var(--mut);font-weight:600}
+.pmc{display:flex;gap:8px}.pmc>div{flex:1;background:var(--bg);border-radius:14px;padding:10px 8px;text-align:center}.pmc i{display:block;width:18px;height:4px;border-radius:9px;margin:0 auto 6px}.pmc b{display:block;font-size:16px}.pmc small{font-size:11.5px;color:var(--mut)}
+.pst{display:flex;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.pst>div{flex:1;text-align:center}.pst>div+div{border-left:1px solid var(--line)}.pst b{display:block;font-size:16px}.pst small{font-size:11.5px;color:var(--mut)}
+.prow{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 14px;border-top:1px solid var(--line);color:var(--mut)}.prow:first-child{border-top:0}
+.prow i{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 6%,transparent);color:var(--ink)}
+.prow span{flex:1;min-width:0}.prow b{display:block;color:var(--ink);font-size:16px;font-weight:600}.prow small{display:block;font-size:13px;color:var(--mut)}
+.cred .crl{display:block;line-height:1.7}
 .st3>div{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;text-align:center}
 .st3 b{display:block;font-size:22px}
 .st3 small{color:var(--mut);font-size:12px}
@@ -188,7 +199,7 @@ input:focus{border-color:var(--acc)}
 .chart text{font-size:10px;fill:var(--mut);font-family:inherit}
 
 /* Réglages en cartes groupées (comme Muscu) */
-.ocard{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.ocard{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .orow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-top:1px solid var(--line);width:100%;text-align:left}
 .orow:first-child{border-top:0}
 .orow span{color:var(--mut);text-align:right}
@@ -325,7 +336,6 @@ html[data-vt=back]::view-transition-new(root){animation:vtInL .32s cubic-bezier(
 /* ============ Naafiri — compteur de calories (inspiré de Yazio) ============
    Données : localStorage + synchro optionnelle dans un dépôt GitHub privé (comme Muscu et MangaTime).
    Aliments : Open Food Facts (recherche + code-barres, sans clé) et une petite table d'aliments de base intégrée. */
-const APPV=25;                            // même numéro que CACHE dans sw.js (naafiri-vN)
 const K='naafiri-v1',DAY=864e5;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -864,22 +874,20 @@ function vProg(){const G=goals();
  return h+tabbar()}
 
 /* Profil et réglages */
-function vProf(){const P=S.prof,G=goals(),kg=curKg(),t=tdee(),imc=kg&&P.h?kg/(P.h/100)**2:0,a=ACT.find(x=>x[0]===P.act)||ACT[1];
+function vProf(){const P=S.prof,G=goals(),kg=curKg(),t=tdee(),imc=kg&&P.h?kg/(P.h/100)**2:0,a=ACT.find(x=>x[0]===P.act)||ACT[1],ob=OBJ.find(o=>o[0]===P.obj)[1],nmy=Object.values(S.foods).filter(o=>o.my).length;
+ const row=(ic,ti,v,act)=>`<button class=prow ${act}><i>${SI(ic,20)}</i><span><b>${ti}</b><small>${v}</small></span>${SI('r',18)}</button>`;
+ const id=[P.sx==='h'?'Homme':P.sx==='f'?'Femme':'',P.age?P.age+' ans':'',P.h?P.h+' cm':''].filter(Boolean).join(' · ')||'Touche le crayon pour te présenter';
  return`<div class=dh><h1 class=fc>Profil</h1>${gear()}</div>
- <div class=st3><div><b class=fc>${fmt(G.k)}</b><small>kcal / jour</small></div><div><b class=fc>${t?fmt(t):'–'}</b><small>dépense estimée</small></div><div><b class=fc>${imc?f1(imc):'–'}</b><small>IMC</small></div></div>
- <p class=lbl>Mon profil</p><div class=ocard>
-  <button class=orow data-a=fprof>Sexe<span>${P.sx==='h'?'Homme':P.sx==='f'?'Femme':'À renseigner'}</span></button>
-  <button class=orow data-a=fprof>Âge<span>${P.age?P.age+' ans':'–'}</span></button>
-  <button class=orow data-a=fprof>Taille<span>${P.h?P.h+' cm':'–'}</span></button>
-  <button class=orow data-a=fprof>Poids actuel<span>${kg?f1(kg)+' kg':'–'}</span></button>
-  <button class=orow data-a=fprof>Activité<span>${a[1]}</span></button>
-  <button class=orow data-a=fprof>Objectif<span>${OBJ.find(o=>o[0]===P.obj)[1]}${P.obj!=='keep'?` · ${f1(P.pace)} kg/sem.`:''}</span></button>
-  <button class=orow data-a=fprof>Poids cible<span>${P.gw?f1(P.gw)+' kg':'–'}</span></button></div>
- <p class=lbl>Objectifs du jour</p><div class=ocard>
-  <button class=orow data-a=fgoal>Calories<span>${fmt(G.k)} kcal${P.kc?' (manuel)':''}</span></button>
-  <button class=orow data-a=fgoal>Glucides · Protéines · Lipides<span>${P.mac.c} · ${P.mac.p} · ${P.mac.f} %</span></button>
-</div>
- <p class=lbl>Aliments</p><div class=ocard><button class="orow go" data-a=sub data-s=my>Mes aliments<span>${Object.values(S.foods).filter(o=>o.my).length}</span></button></div>
+ <div class="card phd"><div class=pav>${SI('user',28)}</div><div class=pid><b>Mon profil</b><small>${id}</small></div><button class=ib data-a=fprof aria-label="Modifier mon profil">${SI('edit',18)}</button></div>
+ <div class="card pgo"><small class=pgl>OBJECTIF DU JOUR</small><div class=pgk><b class=fc>${fmt(G.k)}</b><span>kcal${P.kc?' · manuel':''}</span></div>
+  <div class=pmc>${[['Glucides','c','--cb'],['Protéines','p','--pr'],['Lipides','f','--fa']].map(([l,x,c])=>`<div><i style="background:var(${c})"></i><b>${fmt(G[x])} g</b><small>${l}</small></div>`).join('')}</div>
+  <div class=pst><div><b>${t?fmt(t):'–'}</b><small>Dépense estimée</small></div><div><b>${imc?f1(imc):'–'}</b><small>IMC</small></div><div><b>${P.gw?f1(P.gw)+' kg':'–'}</b><small>Poids cible</small></div></div></div>
+ <p class=lbl>Réglages du profil</p><div class=ocard>
+  ${row('target','Objectif',ob+(P.obj!=='keep'?` · ${f1(P.pace)} kg / semaine`:''),'data-a=fprof')}
+  ${row('bolt','Activité',a[1],'data-a=fprof')}
+  ${row('scale','Poids',kg?f1(kg)+' kg'+(P.gw?' → '+f1(P.gw)+' kg':''):'À renseigner','data-a=fprof')}
+  ${row('chart','Calories et macros',`${fmt(G.k)} kcal · ${P.mac.c} / ${P.mac.p} / ${P.mac.f} %`,'data-a=fgoal')}</div>
+ <p class=lbl>Aliments</p><div class=ocard>${row('book','Mes aliments',nmy?`${nmy} aliment${nmy>1?'s':''} créé${nmy>1?'s':''}`:'Aucun pour l’instant','data-a=sub data-s=my')}</div>
 `+tabbar()}
 function vMy(){const L=Object.values(S.foods).filter(o=>o.my).sort((a,b)=>a.n.localeCompare(b.n));
  return`<header class=sh style="margin-top:12px"><button class=ib data-a=back>${SI('l',20)}</button><h1 class=fc>Mes aliments</h1></header>
@@ -959,7 +967,7 @@ function formHtml(){const f=F,P=S.prof;
   ${MI('sync','sync','Synchroniser maintenant',esc(MSG)||'Envoie et récupère tes données.',1)}
   <div class=opl>BASE USDA (FACULTATIF)</div><div class=ocard>${fl('usda','Clé API USDA','Laisse vide pour ne pas utiliser l’USDA','type=password')}</div>
   <div class=opl>SAUVEGARDE</div>${MI('exp','down','Exporter mes données','Télécharge une copie de ton journal.')}${MI('imp','upl','Importer un fichier','Fusionne une sauvegarde avec tes données.')}<input id=file type=file accept="application/json,.json" hidden>
-  <p class=cred>Aliments génériques : table <a href="https://ciqual.anses.fr" target=_blank rel=noopener>CIQUAL 2025 de l’Anses</a> (Licence Ouverte Etalab). Données produits : <a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a>, sous licence ODbL. Base facultative : <a href="https://fdc.nal.usda.gov" target=_blank rel=noopener>USDA FoodData Central</a> (domaine public). Calcul des besoins : formule de Mifflin-St Jeor.<br>Version ${APPV}</p></div></div>`}
+  <p class=cred><span class=crl><a href="https://ciqual.anses.fr" target=_blank rel=noopener>Table CIQUAL de l’Anses</a> · Licence Ouverte Etalab</span><span class=crl><a href="https://world.openfoodfacts.org" target=_blank rel=noopener>Open Food Facts</a> · licence ODbL</span><span class=crl><a href="https://fdc.nal.usda.gov" target=_blank rel=noopener>USDA FoodData Central</a> · domaine public</span><span class=crl>Calcul des besoins · formule de Mifflin-St Jeor</span></p></div></div>`}
  if(f.k==='copy'){const d=f.d,E=f.src==='day'?dayR(CUR).e:mealE(),t=TODAY(),opts=[[addD(t,-1),'Hier'],[t,'Aujourd’hui'],[addD(t,1),'Demain']].filter(x=>x[0]!==CUR);
   return`<div class=sov data-a=fno><div class=sheet><div class=grab></div><h2>${f.src==='day'?'Copier la journée':'Copier le '+MN[f.m].toLowerCase()}</h2><p class=mut>${E.length} aliment${E.length>1?'s':''} · ${fmt(sum(E).k)} kcal · de ${dayTitle(CUR).toLowerCase()}</p>
   <p class=lbl>Vers le</p>${chips('to',opts,d.to)}<div class=ocard><label class="orow fld"><b>Ou une autre date</b><input class=soft type=date id=cpd value="${d.to}"></label></div>
@@ -1221,15 +1229,15 @@ let LT=TODAY();             // pour revenir sur « aujourd’hui » quand on rou
 
 /* Démarrage */
 /* Couleurs principales : [clé, nom, clair (acc, act, tint), sombre (acc, act, tint)] */
-const ACCS=[['violet','Violet','#a43cf0','#7d22c9','#f0e2fd','#b65cff','#d6a4ff','#45305f'],['rose','Rose','#e0408a','#b0215f','#fbe0ec','#f06aac','#ffa6cf','#5a2742'],
- ['bleu','Bleu','#2f7bf5','#1d5ad0','#dde9fd','#5b9cff','#9cc3ff','#233a5e'],['vert','Vert','#16a34a','#0f7a37','#d9f3e1','#34d27b','#86e8b1','#1f4a33'],
- ['orange','Orange','#f07a1a','#b8530a','#fde8d6','#ff9a45','#ffc08a','#55361d'],['turquoise','Turquoise','#0ea5b7','#0b7c8a','#d5f3f6','#2cc6d6','#8be4ec','#1b4a50']];
+const ACCS=[['violet','Violet','#a43cf0','#7d22c9','#f0e2fd','#b65cff','#d6a4ff','#382847'],['rose','Rose','#e0408a','#b0215f','#fbe0ec','#f06aac','#ffa6cf','#422b38'],
+ ['bleu','Bleu','#2f7bf5','#1d5ad0','#dde9fd','#5b9cff','#9cc3ff','#273447'],['vert','Vert','#16a34a','#0f7a37','#d9f3e1','#34d27b','#86e8b1','#203e30'],
+ ['orange','Orange','#f07a1a','#b8530a','#fde8d6','#ff9a45','#ffc08a','#453426'],['turquoise','Turquoise','#0ea5b7','#0b7c8a','#d5f3f6','#2cc6d6','#8be4ec','#1f3b40']];
 function applyTheme(){const t=S.cfg.theme||'auto',r=document.documentElement,a=ACCS.find(x=>x[0]===S.cfg.acc)||ACCS[0];
  if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);
  let st=$('#accst');if(!st){st=document.createElement('style');st.id='accst';document.head.appendChild(st)}
  const L=`--acc:${a[2]};--act:${a[3]};--tint:${a[4]}`,D=`--acc:${a[5]};--act:${a[6]};--tint:${a[7]}`;
  st.textContent=`:root{${L}}@media(prefers-color-scheme:dark){:root:not([data-theme=light]){${D}}}:root[data-theme=dark]{${D}}`;
- document.querySelectorAll('meta[name=theme-color]').forEach(m=>{const dk=/dark/.test(m.media);m.setAttribute('content',t==='light'?'#f6f4f8':t==='dark'?'#241e2b':dk?'#241e2b':'#f6f4f8')})}
+ document.querySelectorAll('meta[name=theme-color]').forEach(m=>{const dk=/dark/.test(m.media);m.setAttribute('content',t==='light'?'#f5f5f2':t==='dark'?'#111213':dk?'#111213':'#f5f5f2')})}
 applyTheme();
 setTimeout(loadCQ,1500);                // la table CIQUAL est prête avant la première recherche
 history.replaceState({},'');
